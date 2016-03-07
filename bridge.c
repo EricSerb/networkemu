@@ -21,14 +21,14 @@
 int 
 main (int argc, char *argv[])
 {
-  /* create the symbolic links to its address and port number
-   * so that others (stations/routers) can connect to it
-   */
-  
-  /* listen to the socket.
-   * two cases:
-   * 1. connection open/close request from stations/routers
-   * 2. regular data packets
-   */
+	/* create the symbolic links to its address and port number
+	* so that others (stations/routers) can connect to it
+	*/
+
+	/* listen to the socket.
+	* two cases:
+	* 1. connection open/close request from stations/routers
+	* 2. regular data packets
+	*/
 }
 /*----------------------------------------------------------------*/

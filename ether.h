@@ -10,24 +10,24 @@ typedef unsigned char MacAddr[6];
 /* structure of an ethernet pkt */
 typedef struct __etherpkt 
 {
-  /* destination address in net order */
-  MacAddr dst;
+	/* destination address in net order */
+	MacAddr dst;
 
-  /* source address in net order */
-  MacAddr src;
+	/* source address in net order */
+	MacAddr src;
 
-  /************************************/
-  /* payload type in host order       */
-  /* type = 0 : ARP frame             */
-  /* type = 1 : IP  frame             */
-  /************************************/
-  short  type;
-  
-  /* size of the data in host order */
-  short   size;
+	/************************************/
+	/* payload type in host order       */
+	/* type = 0 : ARP frame             */
+	/* type = 1 : IP  frame             */
+	/************************************/
+	short  type;
 
-  /* actual payload */
-  char *  dat;
+	/* size of the data in host order */
+	short   size;
+
+	/* actual payload */
+	char *  dat;
 
 } EtherPkt;
 

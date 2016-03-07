@@ -16,33 +16,33 @@ typedef unsigned long IPAddr;
 /* Structure to represent an interface */
 
 typedef struct iface {
-   char ifacename[32];
-   IPAddr ipaddr;
-   MacAddr macaddr;
-   char lanname[32];
+	char ifacename[32];
+	IPAddr ipaddr;
+	MacAddr macaddr;
+	char lanname[32];
 } Iface;
 
 /* mapping between interface name and socket id representing link */
 typedef struct itface2link {
-  char ifacename[32];
-  int sockfd;
+	char ifacename[32];
+	int sockfd;
 } ITF2LINK;
 
 /* Structure for a routing table entry */
 
 typedef struct rtable {
-   IPAddr destsubnet;
-   IPAddr nexthop;
-   IPAddr mask;
-   char ifacename[32];
+	IPAddr destsubnet;
+	IPAddr nexthop;
+	IPAddr mask;
+	char ifacename[32];
 } Rtable;
 
 
 /* Structure for an ARP cache entry */
 
 typedef struct arpcache {
-    IPAddr ipaddr;
-    MacAddr macaddr;
+	IPAddr ipaddr;
+	MacAddr macaddr;
 } Arpc;
 
 /*--------------------------------------------------------------------*/
@@ -57,66 +57,63 @@ typedef struct arpcache {
 /*list of arp cache, to use this one to maintain current cache*/
 
 typedef struct arp_list {
-  Arpc *arp_item;
-  struct arp_list *next;
+	Arpc *arp_item;
+	struct arp_list *next;
 } ARP_LIST;
 
 /*ARP packet format*/
 typedef struct arp_pkt 
 {
-  short op; /* op =0 : ARP request; op = 1 : ARP response */
-  IPAddr srcip;
-  MacAddr srcmac;
-  IPAddr dstip;
-  MacAddr dstmac;
+	short op; /* op =0 : ARP request; op = 1 : ARP response */
+	IPAddr srcip;
+	MacAddr srcmac;
+	IPAddr dstip;
+	MacAddr dstmac;
 } ARP_PKT;
 
 /*IP packet format*/
 typedef struct ip_pkt
 {
-  IPAddr  dstip;
-  IPAddr  srcip;
-  short   protocol;
-  unsigned long    sequenceno;
-  short   length;
-  char    data[BUFSIZ];
+	IPAddr  dstip;
+	IPAddr  srcip;
+	short   protocol;
+	unsigned long    sequenceno;
+	short   length;
+	char    data[BUFSIZ];
 } IP_PKT;
 
 /*queue for ip packet that has not yet sent out*/
 typedef struct p_queue
 {
-  IPAddr next_hop_ipaddr;
-  IPAddr dst_ipaddr;
-  char *pending_pkt;
-  struct p_queue *next;
-  
+	IPAddr next_hop_ipaddr;
+	IPAddr dst_ipaddr;
+	char *pending_pkt;
+	struct p_queue *next;
 } PENDING_QUEUE;
 
 /*queue to remember the packets we have received*/
 typedef struct packet_queue
 {
-  char *packet;
-  int  length;
-  short counter;
-  struct packet_queue *next;
+	char *packet;
+	int  length;
+	short counter;
+	struct packet_queue *next;
 } OLD_PACKETS;
 
 /*-------------------------------------------------------------------- */
-
 
 #define MAXHOSTS 32
 #define MAXINTER 32
 
 typedef struct host
-  {
-    char name[32];
-    IPAddr addr;
-  }
-Host;
+{
+	char name[32];
+	IPAddr addr;
+} Host;
 
 typedef struct lan_rout {
-  short router_attached;
-  short counter;
+	short router_attached;
+	short counter;
 } LAN_ROUT;
 
 /* some global variables here */
