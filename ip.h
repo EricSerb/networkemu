@@ -11,6 +11,8 @@
 #define PROT_TYPE_TCP 1
 #define PROT_TYPE_OSPF 2
 
+#define BUFSIZE 1024
+
 typedef unsigned long IPAddr;
 
 /* Structure to represent an interface */
@@ -79,7 +81,7 @@ typedef struct ip_pkt
 	short   protocol;
 	unsigned long    sequenceno;
 	short   length;
-	char    data[BUFSIZ];
+	char    data[BUFSIZE];
 } IP_PKT;
 
 /*queue for ip packet that has not yet sent out*/
