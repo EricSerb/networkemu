@@ -7,15 +7,11 @@ INCLUDES = ether.h ip.h
 
 all: bridge station 
 
-bridge: bridge.o ether.o lan.o 
+bridge: bridge.o string_utils.o
 	g++ -o $@ $^ $(CXXFLAGS)
 
-station: station.o ether.o ypage.o lan.o ip.o 
+station: station.o string_utils.o
 	g++ -o $@ $^ $(CXXFLAGS)
 
 clean : 
 	rm -f bridge station *.o
-
-%.o : %.c $(INCLUDES)
-	$(CC) $(CFLAGS) $<
-
