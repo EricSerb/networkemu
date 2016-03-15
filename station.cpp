@@ -20,6 +20,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <cstring>
 #include "string_utils.h"
 
 using namespace std;
@@ -31,6 +32,23 @@ using namespace std;
 /* usage: station <-no -route> interface routingtable hostname */
 int main (int argc, char *argv[])
 {
+	if(argc != 5) {
+		cout << "Usage: station <router flag> <interface> <routing table> <hostname>" << endl;
+		exit(1);
+	}
+	
+	// Check if we're a station or a router
+	bool router;
+	
+	if(strcmp(argv[1], "-router") < 0)
+		router = true;
+	else if(strcmp(argv[1], "-no") < 0)
+		router = false;
+	else {
+		cout << "Router flag must be `-no` or `-station`" << endl;
+		exit(1);
+	}
+	
 	// Test parsing interface file
 	ifstream ifaceFile("./ifaces/ifaces.a");
 	
