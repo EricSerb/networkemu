@@ -1,6 +1,9 @@
 #ifndef ETHER_H
 #define ETHER_H
 
+
+#include "ip.h"
+
 #define PEER_CLOSED 2
 #define TYPE_IP_PKT 1
 #define TYPE_ARP_PKT 0
@@ -27,7 +30,8 @@ typedef struct __etherpkt
 	short   size;
 
 	/* actual payload */
-	char *  dat;
+	ARP_PKT arp;
+	IP_PKT ip;
 
 } EtherPkt;
 
