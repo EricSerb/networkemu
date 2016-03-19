@@ -17,11 +17,13 @@
 //Eric's headers used in server.cpp
 #include <stdlib.h>
 #include <iostream>
-#include <string.h>
+#include <string>
 #include <unistd.h>
 
 //New headers
 #include <queue>
+#include <vector>
+#include "ip.h"
 /*----------------------------------------------------------------*/
 
 using namespace std;
@@ -50,6 +52,7 @@ main (int argc, char *argv[])
 	int addrlen;
 	int i, j;
 	int numPorts = atoi(argv[2]);
+	int portCount = 0;
 	string message;
 	//server address
 	struct sockaddr_in saddr;
@@ -60,6 +63,16 @@ main (int argc, char *argv[])
 	//temp fd list for select()
 	fd_set read_fds;
 	char linprog2[] = {"128.186.120.34"};
+
+	//Vector to hold the learned IP addresses
+	vector<Iface> rTable;
+
+	//Queue for holding packets received and need to be sent out. Also variables for holding 
+	//newly arrived packets so that they can be placed in the queue
+	queue<PacketQ> recPackets;
+	vector<PacketQ> arpWait;
+	EtherPacket newPacket;
+	PacketQ addToQ;
 
 	FD_ZERO(&master);
 	FD_ZERO(&read_fds);
@@ -132,14 +145,43 @@ main (int argc, char *argv[])
 	fdmax = listener; 
 
 	cout << endl;
+	
+	//No longer need to put out name and address as stations will read this from a file
+	/*
 	cout << "Server name = " << temp << endl;
 	cout << "Server address = " << inet_ntoa(saddr.sin_addr) << endl;
 	cout << "Server port number = " << ntohs(saddr.sin_port) << endl;
+	*/
 
 	for(;;)
 	{
 		memset(&buf, 0, sizeof(buf));
 		read_fds = master;
+
+		if(!recPackets.empty())
+		{
+			/*TODO: send out packets here
+			 * Need to send out ARP packets to everyone but source */	
+			//This is the code for sending out to all ports except the one received
+			//need this for ARP request packets
+			//we got some data from the client
+			for(j = 0; j <= fdmax; j++)
+			{
+				//send to everyone
+				if(FD_ISSET(j, &master))
+				{
+					//except the listener and server
+					if(j != listener && j != i)
+					{
+						//cout << buf << " i = " << j << endl;
+						if(send(j, buf, nbytes, 0) == -1)
+						{
+							cout << "Server send() error..." << endl;
+						}
+					}
+				}
+			}
+		}
 
 		if(select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1)
 		{
@@ -163,30 +205,40 @@ main (int argc, char *argv[])
 					}
 					else
 					{
-					
-						FD_SET(newfd, &master); //adding to master set
-						if(newfd > fdmax)
+						if(portCount >= numPorts)
 						{
-							fdmax = newfd;
+							strcpy(buf, "Reject");
+							nbytes = 7;
+							send(newfd, buf, nbytes, 0);
 						}
+						else
+						{
+							FD_SET(newfd, &master); //adding to master set
+							portCount++; //increase port count to keep track of number of ports in use
+							if(newfd > fdmax)
+							{
+								fdmax = newfd;
+							}
 
-						cout << endl << endl << argv[0] << ": New connection from " << inet_ntoa(caddr.sin_addr) << " on socket " << newfd << endl;
+							cout << endl << endl << argv[0] << ": New connection from " << inet_ntoa(caddr.sin_addr) << " on socket " << newfd << endl;
 
-						cout << endl;
-						cout << "Server name = " << temp << endl;
-						cout << "Server address = " << inet_ntoa(saddr.sin_addr) << endl;
-						cout << "Server port number = " << ntohs(saddr.sin_port) << endl;
+							cout << endl;
+							cout << "Server name = " << temp << endl;
+							cout << "Server address = " << inet_ntoa(saddr.sin_addr) << endl;
+							cout << "Server port number = " << ntohs(saddr.sin_port) << endl;
+						}
 					}
 				}
 				else
 				{
 					//handle data from client
-					if((nbytes = recv(i, buf, sizeof(buf), 0)) <= 0)
+					if((nbytes = recv(i, newPacket, sizeof(newPacket), 0)) <= 0)
 					{
 						//error or connection closed
 						if(nbytes == 0)
 						{
 							cout << argv[0] << ": socket " << i << " hung up" << endl;
+							portCount--; //decrease count since client no longer using port
 						}
 						else
 						{
@@ -199,23 +251,45 @@ main (int argc, char *argv[])
 					}
 					else
 					{
-						//we got some data from the client
-						for(j = 0; j <= fdmax; j++)
+						/*TODO:look up next hop in routing table
+						 * If next hop is not in routing table then send out ARP request and 
+						 * put packet in arpWait vector
+						 */
+
+						//Need to add the packet to the Queue and look up the next_hop_IPaddr from routing table
+						//Get dst_IP from packet
+						addToQ.packet = newPacket;
+						if(newPacket.type == TYPE_IP_PKT)
 						{
-							//send to everyone
-							if(FD_ISSET(j, &master))
+							addToQ.dst_ipaddr = newPacket.ip.dstip;
+						}
+						else //arp packet
+						{
+							if(newPacket.arp.op == ARP_REQUEST)
 							{
-								//except the listener and server
-								if(j != listener && j != i)
-								{
-									//cout << buf << " i = " << j << endl;
-									if(send(j, buf, nbytes, 0) == -1)
-									{
-										cout << "Server send() error..." << endl;
-									}
-								}
+								addToQ.dst_ipaddr = -1;
+							}
+							else //response packet
+							{
+								/*TODO: look over logic on this*/
+								arpResponse = newPacket;
+								memset(&newPacket, 0, sizeof(addToQ));
+								continue;
 							}
 						}
+
+						if(addToQ.dst == 0) 
+						{
+							//put in arp vector since need to find MAC
+							arpWait.push_back(addToQ);
+						}
+						else
+						{
+							recPackets.push(addToQ);
+						}
+
+						memset(&newPacket, 0, sizeof(addToQ));
+						memset(&addToQ, 0, sizeof(addToQ));
 					}
 				}
 			}
