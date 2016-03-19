@@ -30,8 +30,8 @@ typedef struct __etherpkt
 	short   size;
 
 	/* actual payload */
-	ARP_PKT arp;
-	IP_PKT ip;
+	//ARP_PKT arp;
+	//IP_PKT ip;
 
 } EtherPkt;
 
