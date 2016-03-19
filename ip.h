@@ -1,6 +1,7 @@
 #ifndef IP_H
 #define IP_H
 #include "ether.h"
+#include <sys/time.h>
 
 /* ARP packet types */
 #define ARP_REQUEST 0
@@ -37,6 +38,7 @@ typedef struct rtable {
 	IPAddr nexthop;
 	IPAddr mask;
 	char ifacename[32];
+	timeval timer;
 } Rtable;
 
 
@@ -84,23 +86,22 @@ typedef struct ip_pkt
 	char    data[BUFSIZE];
 } IP_PKT;
 
-/*queue for ip packet that has not yet sent out*/
+/*queue for ip packet that has not yet sent out
 typedef struct p_queue
 {
 	IPAddr next_hop_ipaddr;
 	IPAddr dst_ipaddr;
 	char *pending_pkt;
 	struct p_queue *next;
-} PENDING_QUEUE;
+} PENDING_QUEUE;*/
 
-/*queue to remember the packets we have received*/
+/*queue to hold packets and tell where they need to go next*/
 typedef struct packet_queue
 {
-	char *packet;
-	int  length;
-	short counter;
-	struct packet_queue *next;
-} OLD_PACKETS;
+	EtherPkt packet;
+	IPAddr next_hop_ipaddr;
+	IPAddr dst_ipaddr;
+} PacketQ;
 
 /*-------------------------------------------------------------------- */
 
