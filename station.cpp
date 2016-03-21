@@ -68,11 +68,23 @@ void dumpRtables(vector<rtable> entries)
 		cout << ntop(entries[i].destsubnet) << "\t";
 		cout << ntop(entries[i].nexthop) << "\t";
 		cout << ntop(entries[i].mask) << "\t";
-		cout << entries[i].ifacename << "\t";
+		cout << entries[i].ifacename;
 		cout << endl;
 	}
 	cout << endl;
 	
+}
+
+/**
+ * Display host information
+ */
+void dumpHost(Host h)
+{
+	cout << "HOST INFORMATION" << endl;
+	cout << "HOSTNAME\tIP ADDRESS\tPORT" << endl;
+	cout << h.name << "\t";
+	cout << ntop(h.addr) << "\t";
+	cout << h.port << endl;
 }
 
 /**
@@ -170,11 +182,50 @@ vector<rtable> extractRouteTable(string fn)
 	return entries;
 }
 
+/**
+ * Parse a hostfile.
+ */
+Host extractHost(string fn)
+{
+	ifstream hostFile(fn.c_str());
+	
+	if(!hostFile.is_open()) {
+		cout << "Error opening " << fn << endl;
+		exit(1);
+	}
+	
+	string line;
+	
+	//TODO: probably should do some error checking to make sure host is valid
+	getline(hostFile, line);
+	
+	stringstream linestream(line);
+	
+	string name;
+	string addr;
+	int port;
+	
+	linestream >> name >> addr >> port;
+	
+	Host h;
+	
+	strcpy(h.name, name.c_str());
+	
+	sockaddr_in sa;
+	inet_pton(AF_INET, addr.c_str(), &(sa.sin_addr));
+	h.addr = sa.sin_addr.s_addr;
+	
+	h.port = port;
+	
+	return h;
+}
+
 /*----------------------------------------------------------------*/
 /* station : gets hooked to all the lans in its ifaces file, sends/recvs pkts */
 /* usage: station <-no -route> interface routingtable hostname */
 int main (int argc, char *argv[])
 {
+	/* initialization of hosts, interface, and routing tables */
 	if(argc != 5) {
 		cout << "Usage: station <router flag> <interface file> <routing table> <hostname>" << endl;
 		exit(1);
@@ -202,7 +253,11 @@ int main (int argc, char *argv[])
 	
 	dumpRtables(rtableEntries);
 	
-	/* initialization of hosts, interface, and routing tables */
+	fn = argv[4];
+	
+	Host bridge = extractHost(fn);
+	
+	dumpHost(bridge);
 
 	/* hook to the lans that the station should connected to
 	* note that a station may need to be connected to multilple lans
