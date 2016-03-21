@@ -23,6 +23,7 @@
 //New headers
 #include <queue>
 #include <vector>
+#include <fstream>
 #include "ip.h"
 /*----------------------------------------------------------------*/
 
@@ -64,13 +65,12 @@ main (int argc, char *argv[])
 	fd_set read_fds;
 	char linprog2[] = {"128.186.120.34"};
 
-	//Vector to hold the learned IP addresses
-	vector<Iface> rTable;
+	//Vector for routing table
+	vector<rtable> rTable;
 
 	//Queue for holding packets received and need to be sent out. Also variables for holding 
 	//newly arrived packets so that they can be placed in the queue
 	queue<PacketQ> recPackets;
-	vector<PacketQ> arpWait;
 	EtherPacket newPacket;
 	PacketQ addToQ;
 
@@ -79,23 +79,29 @@ main (int argc, char *argv[])
 	memset(&saddr, 0, sizeof(saddr));
 	memset(&caddr, 0, sizeof(caddr));
 
+	if(argc < 3)
+	{
+		cout << "Command line must include: .exe, lan-name, num-ports" << endl;
+		cout << "Bridge failure..." << endl;
+	}
+
 	//socket
 	if((listener = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
-		cout << "Server socket() error... CRASH!" << endl;
+		cout << "Bridge socket() error... CRASH!" << endl;
 		exit(1);
 	}
 
-	cout << "Server socket() ok..." << endl;
+	cout << "Bridge socket() ok..." << endl;
 
 	//addr already in use
 	if(setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
 	{
-		cout << "Server setsockopt() error... CRASH!" << endl;
+		cout << "Bridge setsockopt() error... CRASH!" << endl;
 		exit(1);
 	}
 
-	cout << "Server setsockopt ok..." << endl;
+	cout << "Bridge setsockopt ok..." << endl;
 
 	char temp[255];
 	gethostname(temp, 255);
@@ -110,7 +116,7 @@ main (int argc, char *argv[])
 
 	if(bind(listener, (struct sockaddr *)&saddr, sizeof(saddr)) == -1)
 	{
-		cout << "Server bind() error... CRASH!" << endl;
+		cout << "Bridge bind() error... CRASH!" << endl;
 		exit(1);
 	}
 	//unsigned long p = saddr.sin_port;
@@ -119,23 +125,23 @@ main (int argc, char *argv[])
 
 	
 	//saddr.sin_port = p;
-	cout << "Server bind() ok..." << endl;
+	cout << "Bridge bind() ok..." << endl;
 	
 	//cout << "Server address = " << saddr.sin_addr.s_addr << endl;
 	//cout << "Server port number = " << saddr.sin_port << endl;
 
 	if(listen(listener, 10) == -1)
 	{
-		cout << "Server listen() error... CRASH!" << endl;
+		cout << "Bridge listen() error... CRASH!" << endl;
 		exit(1);
 	}
 	
-	cout << "Server listen() ok..." << endl;
+	cout << "Bridge listen() ok..." << endl;
 	
 	socklen_t len = sizeof(saddr);
 	if(getsockname(listener, (struct sockaddr*)&saddr, &len) == -1)
 	{
-		cout << "Server getsockname() error... CRASH!" << endl;
+		cout << "Bridge getsockname() error... CRASH!" << endl;
 		exit(1);
 	}
 	//add listener to the master set
@@ -145,7 +151,19 @@ main (int argc, char *argv[])
 	fdmax = listener; 
 
 	cout << endl;
-	
+
+	//Write the IP addr and port number to files for station to use later
+	string lanName = argc[2];
+	ofstream ipFile;
+	ipFile.open(lanName + "-ip.txt", out | app);
+	ofstream portFile;
+	portFile.open(lanName + "-port.txt", out | app);
+
+	ipFile << inet_ntoa(saddr.sin_addr);
+	portFile << ntohs(saddr.sin_port);
+
+	ipFile.close();
+	portFile.close();
 	//No longer need to put out name and address as stations will read this from a file
 	/*
 	cout << "Server name = " << temp << endl;
@@ -157,35 +175,46 @@ main (int argc, char *argv[])
 	{
 		memset(&buf, 0, sizeof(buf));
 		read_fds = master;
-
-		if(!recPackets.empty())
+		
+		//TODO: Do we want this as while to send all or if to send one at a time?
+		while(!recPackets.empty())
 		{
+			PacketQ toSend = recPackets.pop();
 			/*TODO: send out packets here
-			 * Need to send out ARP packets to everyone but source */	
-			//This is the code for sending out to all ports except the one received
-			//need this for ARP request packets
-			//we got some data from the client
-			for(j = 0; j <= fdmax; j++)
+			 * If next hop is not known then broadcast using for loop code
+			 */
+			if(toSend.next_hop_ipaddr == 0)
 			{
-				//send to everyone
-				if(FD_ISSET(j, &master))
+				//This is the code for sending out to all ports except the one received on
+				for(j = 0; j <= fdmax; j++)
 				{
-					//except the listener and server
-					if(j != listener && j != i)
+					//send to everyone
+					if(FD_ISSET(j, &master))
 					{
-						//cout << buf << " i = " << j << endl;
-						if(send(j, buf, nbytes, 0) == -1)
+						//except the listener and server
+						if(j != listener && j != i)
 						{
-							cout << "Server send() error..." << endl;
+							//cout << buf << " i = " << j << endl;
+							if(send(j, toSend.packet, toSend.packet.size, 0) == -1)
+							{
+								cout << "Bridge send() error..." << endl;
+							}
 						}
 					}
+				}
+			}
+			else //we know the next hop just need to send to that port
+			{
+				if(send(toSend.port, toSend.packet, toSend.packet.size, 0) == -1)
+				{
+					cout << "Bridge send() error..." << endl;
 				}
 			}
 		}
 
 		if(select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1)
 		{
-			cout << "Server select() error... CRASH!" << endl;
+			cout << "Bridge select() error... CRASH!" << endl;
 			exit(1);
 		}
 		//cout << "Server select() ok..." << endl;
@@ -201,7 +230,7 @@ main (int argc, char *argv[])
 					addrlen = sizeof(caddr);
 					if((newfd = accept(listener, (struct sockaddr *)&caddr, (socklen_t *) &addrlen)) == -1)
 					{
-						cout << "Server accpet() error...." << endl;
+						cout << "Bridge accpet() error...." << endl;
 					}
 					else
 					{
@@ -223,9 +252,9 @@ main (int argc, char *argv[])
 							cout << endl << endl << argv[0] << ": New connection from " << inet_ntoa(caddr.sin_addr) << " on socket " << newfd << endl;
 
 							cout << endl;
-							cout << "Server name = " << temp << endl;
-							cout << "Server address = " << inet_ntoa(saddr.sin_addr) << endl;
-							cout << "Server port number = " << ntohs(saddr.sin_port) << endl;
+							cout << "Bridge name = " << temp << endl;
+							cout << "Bridge address = " << inet_ntoa(saddr.sin_addr) << endl;
+							cout << "Bridge port number = " << ntohs(saddr.sin_port) << endl;
 						}
 					}
 				}
@@ -242,7 +271,7 @@ main (int argc, char *argv[])
 						}
 						else
 						{
-							cout << "Server recv() error..." << endl;
+							cout << "Bridge recv() error..." << endl;
 						}
 
 						close(i);
@@ -251,42 +280,19 @@ main (int argc, char *argv[])
 					}
 					else
 					{
-						/*TODO:look up next hop in routing table
-						 * If next hop is not in routing table then send out ARP request and 
-						 * put packet in arpWait vector
+						/*TODO:look up next hop in routing table and if not in there then broadcast
+						 * Add the packet to the queue
+						 * Add the source MAC if not in the routing table
+						 *
 						 */
 
 						//Need to add the packet to the Queue and look up the next_hop_IPaddr from routing table
 						//Get dst_IP from packet
 						addToQ.packet = newPacket;
-						if(newPacket.type == TYPE_IP_PKT)
-						{
-							addToQ.dst_ipaddr = newPacket.ip.dstip;
-						}
-						else //arp packet
-						{
-							if(newPacket.arp.op == ARP_REQUEST)
-							{
-								addToQ.dst_ipaddr = -1;
-							}
-							else //response packet
-							{
-								/*TODO: look over logic on this*/
-								arpResponse = newPacket;
-								memset(&newPacket, 0, sizeof(addToQ));
-								continue;
-							}
-						}
 
-						if(addToQ.dst == 0) 
-						{
-							//put in arp vector since need to find MAC
-							arpWait.push_back(addToQ);
-						}
-						else
-						{
-							recPackets.push(addToQ);
-						}
+						addToQ.dst_ipaddr = newPacket.ip.dstip;
+
+						
 
 						memset(&newPacket, 0, sizeof(addToQ));
 						memset(&addToQ, 0, sizeof(addToQ));

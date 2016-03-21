@@ -100,6 +100,7 @@ typedef struct p_queue
 typedef struct packet_queue
 {
 	EtherPkt packet;
+	int port;
 	IPAddr next_hop_ipaddr;
 	IPAddr dst_ipaddr;
 } PacketQ;
