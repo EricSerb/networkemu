@@ -33,6 +33,6 @@ typedef struct __etherpkt
 	//ARP_PKT arp;
 	//IP_PKT ip;
 
-} EtherPkt;
+}__attribute__(( packed )) EtherPkt;
 
 #endif

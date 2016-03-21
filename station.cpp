@@ -12,6 +12,7 @@
 #include "string_utils.h"
 #include <iomanip>
 #include "ip.h"
+#include "ether.h"
 
 using namespace std;
 /*----------------------------------------------------------------*/
