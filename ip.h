@@ -114,6 +114,7 @@ typedef struct host
 {
 	char name[32];
 	IPAddr addr;
+	int port;
 } Host;
 
 typedef struct lan_rout {
