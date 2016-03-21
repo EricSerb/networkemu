@@ -134,7 +134,7 @@ int intr_cnt; /* counter for interface */
 Rtable rt_table[MAXHOSTS*MAXINTER];
 int rt_cnt;
 
-PENDING_QUEUE *pending_queue;
+//PENDING_QUEUE *pending_queue;
 ARP_LIST *arp_cache;
 
 int ROUTER;

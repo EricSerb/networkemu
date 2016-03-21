@@ -16,28 +16,75 @@
 using namespace std;
 /*----------------------------------------------------------------*/
 
-void dumpInterfaces(vector<iface> ifaces)
+/**
+ * Convert an IPAddr to its printable form.
+ */
+string ntop(IPAddr addr)
 {
-	for(int i = 0; i < ifaces.size(); ++i) {
-		cout << "Name: " << ifaces[i].ifacename << endl;
-		cout << "IP Address (network byte order): " << ifaces[i].ipaddr << endl;
-		cout << "Subnet Mask (network byte order): " << ifaces[i].mask << endl;
-		cout << "Mac Address: ";
-		for (int j = 0; j < 6; j++)
-			cout << setfill('0') << setw(2) << hex << static_cast<int>(ifaces[i].macaddr[j]) << ":";
-		cout << endl;
-		cout << "Lan Name: " << ifaces[i].lanname << endl;
-		cout << endl;
-	}
+	struct sockaddr_in sa;
+	sa.sin_addr.s_addr = addr;
+	
+	char str[INET_ADDRSTRLEN];
+	
+	inet_ntop(AF_INET, &(sa.sin_addr), str, INET_ADDRSTRLEN);
+	
+	return str;
 }
 
+/**
+ * Display all entries found in a given iface vector.
+ */
+void dumpInterfaces(vector<iface> ifaces)
+{
+	cout << "INTERFACES" << endl;
+	cout << "NAME\tIP\tSUBNET\tMAC" << endl;
+	for(int i = 0; i < ifaces.size(); ++i) {
+		cout << ifaces[i].ifacename << "\t";
+		cout << ntop(ifaces[i].ipaddr) << "\t";
+		cout << ntop(ifaces[i].mask) << "\t";
+		
+		for (int j = 0; j < 6; j++) {
+			cout << setfill('0') << setw(2) << hex << static_cast<int>(ifaces[i].macaddr[j]);
+			if(j < 5)
+				cout << ":";
+			if(j == 5)
+				cout << "\t";
+		}
+
+		cout << ifaces[i].lanname;
+		cout << endl;
+	}
+	cout << endl;
+}
+
+/**
+ * Display all entries found in a given rtable vector.
+ */
+void dumpRtables(vector<rtable> entries)
+{
+	cout << "ROUTING TABLE" << endl;
+	cout << "DESTINATION\tNEXT HOP\tMASK\tINTERFACE" << endl;
+	for (int i = 0; i < entries.size(); ++i) {
+		cout << ntop(entries[i].destsubnet) << "\t";
+		cout << ntop(entries[i].nexthop) << "\t";
+		cout << ntop(entries[i].mask) << "\t";
+		cout << entries[i].ifacename << "\t";
+		cout << endl;
+	}
+	cout << endl;
+	
+}
+
+/**
+ * Parse an interface file.
+ */
 vector<iface> extractInterfaces(string fn)
 {
 	// Test parsing interface file
 	ifstream ifaceFile(fn.c_str());
 	
 	if(!ifaceFile.is_open()) {
-		cout << "Error opening interface file." << endl;
+		cout << "Error opening " << fn << endl;
 		exit(1);
 	}
 	
@@ -47,7 +94,6 @@ vector<iface> extractInterfaces(string fn)
 	// Parse interface file, which is split by whitespaces
 	string line;
 	while(getline(ifaceFile, line)) {
-		cout << __LINE__ << endl;
 		stringstream linestream(line);
 		string name;
 		string ip;
@@ -55,7 +101,6 @@ vector<iface> extractInterfaces(string fn)
 		string mac;
 		string lan;
 		linestream >> name >> ip >> subnet >> mac >> lan;
-		cout << name << " " << ip << " " << subnet << " "  << mac << " "  << lan << endl;
 		
 		iface interface;
 		strcpy(interface.ifacename, name.c_str());
@@ -66,7 +111,6 @@ vector<iface> extractInterfaces(string fn)
 		
 		inet_pton(AF_INET, subnet.c_str(),&(sa.sin_addr));
 		interface.mask = sa.sin_addr.s_addr;
-		
 
 		unsigned int iMac[6];
 		int i;
@@ -75,14 +119,55 @@ vector<iface> extractInterfaces(string fn)
 		for(i = 0;i < 6;i++)
 			interface.macaddr[i] = (unsigned char)iMac[i];
 
-			
-		
 		strcpy(interface.lanname, lan.c_str());
 		
 		ifaces.push_back(interface);
 	}
 	
 	return ifaces;
+}
+
+/**
+ * Parse a routing table file.
+ */
+vector<rtable> extractRouteTable(string fn)
+{
+	ifstream routeFile(fn.c_str());
+	
+	if(!routeFile.is_open()) {
+		cout << "Error opening " << fn << endl;
+		exit(1);
+	}
+	
+	vector<rtable> entries;
+	string line;
+	
+	while(getline(routeFile, line)) {
+		stringstream linestream(line);
+		string dest;
+		string nexthop;
+		string mask;
+		string ifacename;
+		linestream >> dest >> nexthop >> mask >> ifacename;
+		
+		rtable entry;
+		
+		struct sockaddr_in sa;
+		inet_pton(AF_INET, dest.c_str(), &(sa.sin_addr));
+		entry.destsubnet = sa.sin_addr.s_addr;
+		
+		inet_pton(AF_INET, nexthop.c_str(), &(sa.sin_addr));
+		entry.nexthop = sa.sin_addr.s_addr;
+		
+		inet_pton(AF_INET, mask.c_str(), &(sa.sin_addr));
+		entry.mask = sa.sin_addr.s_addr;
+		
+		strcpy(entry.ifacename, ifacename.c_str());
+		
+		entries.push_back(entry);
+	}
+	
+	return entries;
 }
 
 /*----------------------------------------------------------------*/
@@ -110,6 +195,12 @@ int main (int argc, char *argv[])
 	vector<iface> ifaces = extractInterfaces(fn);
 	
 	dumpInterfaces(ifaces);
+	
+	fn = argv[3];
+	
+	vector<rtable> rtableEntries = extractRouteTable(fn);
+	
+	dumpRtables(rtableEntries);
 	
 	/* initialization of hosts, interface, and routing tables */
 
