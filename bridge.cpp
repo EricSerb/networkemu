@@ -10,7 +10,6 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <errno.h>
-#include <string.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 
@@ -25,14 +24,14 @@
 #include <vector>
 #include <fstream>
 #include "ip.h"
+#include <cstring>
 /*----------------------------------------------------------------*/
 
 using namespace std;
 
 /* bridge : recvs pkts and relays them */
 /* usage: bridge lan-name max-port */
-int 
-main (int argc, char *argv[])
+int main (int argc, char *argv[])
 {	
 	/* create the symbolic links to its address and port number
 	* so that others (stations/routers) can connect to it
@@ -71,8 +70,9 @@ main (int argc, char *argv[])
 	//Queue for holding packets received and need to be sent out. Also variables for holding 
 	//newly arrived packets so that they can be placed in the queue
 	queue<PacketQ> recPackets;
-	EtherPacket newPacket;
+	EtherPkt newPacket;
 	PacketQ addToQ;
+	vector<unsigned char> pkt;
 
 	FD_ZERO(&master);
 	FD_ZERO(&read_fds);
@@ -153,17 +153,15 @@ main (int argc, char *argv[])
 	cout << endl;
 
 	//Write the IP addr and port number to files for station to use later
-	string lanName = argc[2];
-	ofstream ipFile;
-	ipFile.open(lanName + "-ip.txt", out | app);
-	ofstream portFile;
-	portFile.open(lanName + "-port.txt", out | app);
+	string hostName;
+	hostName.assign(argv[1]);
+	ofstream hostFile;
+	hostName += ".txt";
+	hostFile.open(hostName.c_str(), std::ofstream::out);
+	
+	hostFile << inet_ntoa(saddr.sin_addr) << " " <<  ntohs(saddr.sin_port);
 
-	ipFile << inet_ntoa(saddr.sin_addr);
-	portFile << ntohs(saddr.sin_port);
-
-	ipFile.close();
-	portFile.close();
+	hostFile.close();
 	//No longer need to put out name and address as stations will read this from a file
 	/*
 	cout << "Server name = " << temp << endl;
@@ -179,7 +177,8 @@ main (int argc, char *argv[])
 		//TODO: Do we want this as while to send all or if to send one at a time?
 		while(!recPackets.empty())
 		{
-			PacketQ toSend = recPackets.pop();
+			PacketQ toSend = recPackets.front();
+			recPackets.pop();
 			/*TODO: send out packets here
 			 * If next hop is not known then broadcast using for loop code
 			 */
@@ -195,7 +194,7 @@ main (int argc, char *argv[])
 						if(j != listener && j != i)
 						{
 							//cout << buf << " i = " << j << endl;
-							if(send(j, toSend.packet, toSend.packet.size, 0) == -1)
+							if(send(j, &pkt[0], pkt.size(), 0) == -1)
 							{
 								cout << "Bridge send() error..." << endl;
 							}
@@ -205,7 +204,7 @@ main (int argc, char *argv[])
 			}
 			else //we know the next hop just need to send to that port
 			{
-				if(send(toSend.port, toSend.packet, toSend.packet.size, 0) == -1)
+				if(send(toSend.port, &pkt[0], pkt.size(), 0) == -1)
 				{
 					cout << "Bridge send() error..." << endl;
 				}
@@ -261,7 +260,7 @@ main (int argc, char *argv[])
 				else
 				{
 					//handle data from client
-					if((nbytes = recv(i, newPacket, sizeof(newPacket), 0)) <= 0)
+					if((nbytes = recv(i, buf, sizeof(buf), 0)) <= 0)
 					{
 						//error or connection closed
 						if(nbytes == 0)
@@ -290,7 +289,7 @@ main (int argc, char *argv[])
 						//Get dst_IP from packet
 						addToQ.packet = newPacket;
 
-						addToQ.dst_ipaddr = newPacket.ip.dstip;
+						//addToQ.dst_ipaddr = newPacket.ip.dstip;
 
 						
 
