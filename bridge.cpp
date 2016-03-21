@@ -159,7 +159,7 @@ int main (int argc, char *argv[])
 	hostName += ".txt";
 	hostFile.open(hostName.c_str(), std::ofstream::out);
 	
-	hostFile << inet_ntoa(saddr.sin_addr) << " " <<  ntohs(saddr.sin_port);
+	hostFile << argv[1] << " " << inet_ntoa(saddr.sin_addr) << " " <<  ntohs(saddr.sin_port);
 
 	hostFile.close();
 	//No longer need to put out name and address as stations will read this from a file
