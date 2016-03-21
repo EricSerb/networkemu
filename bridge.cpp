@@ -83,6 +83,7 @@ int main (int argc, char *argv[])
 	{
 		cout << "Command line must include: .exe, lan-name, num-ports" << endl;
 		cout << "Bridge failure..." << endl;
+		exit(1);
 	}
 
 	//socket
