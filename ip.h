@@ -102,7 +102,7 @@ typedef struct p_queue
  * 	this variable is used when sending queued packets.  If known is set
  * 	to false, we must broadcast the packet to every open file descriptor
  * 	associated with the bridge (except for STDIN/OUT/ERR
- * /
+ */
 typedef struct packet_queue
 {
 	unsigned char buf[BUFSIZE];
