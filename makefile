@@ -1,5 +1,5 @@
 CC     = g++
-CFLAGS = -std-c++11 -Wall
+CXXFLAGS = -std=c++11 -Wall
 INCLUDES = ether.h ip.h
 
 %.o: %.cpp
