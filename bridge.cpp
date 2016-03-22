@@ -70,9 +70,6 @@ int main (int argc, char *argv[])
 	//Queue for holding packets received and need to be sent out. Also variables for holding 
 	//newly arrived packets so that they can be placed in the queue
 	queue<PacketQ> recPackets;
-	EtherPkt newPacket;
-	PacketQ addToQ;
-	vector<unsigned char> pkt;
 
 	FD_ZERO(&master);
 	FD_ZERO(&read_fds);
@@ -182,7 +179,7 @@ int main (int argc, char *argv[])
 			/*TODO: send out packets here
 			 * If next hop is not known then broadcast using for loop code
 			 */
-			if(toSend.next_hop_ipaddr == 0)
+			if(!toSend.known)
 			{
 				//This is the code for sending out to all ports except the one received on
 				for(j = 0; j <= fdmax; j++)
@@ -194,7 +191,7 @@ int main (int argc, char *argv[])
 						if(j != listener && j != i)
 						{
 							//cout << buf << " i = " << j << endl;
-							if(send(j, &pkt[0], pkt.size(), 0) == -1)
+							if(send(j, &toSend.buf[0], sizeof(toSend.buf), 0) == -1)
 							{
 								cout << "Bridge send() error..." << endl;
 							}
@@ -204,7 +201,7 @@ int main (int argc, char *argv[])
 			}
 			else //we know the next hop just need to send to that port
 			{
-				if(send(toSend.port, &pkt[0], pkt.size(), 0) == -1)
+				if(send(toSend.port, &toSend.buf[0], sizeof(toSend.buf), 0) == -1)
 				{
 					cout << "Bridge send() error..." << endl;
 				}
