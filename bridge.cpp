@@ -73,7 +73,7 @@ int main (int argc, char *argv[])
 	fd_set master;
 	//temp fd list for select()
 	fd_set read_fds;
-	char linprog2[] = {"128.186.120.34"};
+	//char linprog2[] = {"128.186.120.34"};
 
 	//Vector for routing table
 	vector<rtable> rTable;
@@ -191,7 +191,7 @@ int main (int argc, char *argv[])
 		{
 			PacketQ toSend = recPackets.front();
 			recPackets.pop();
-			/*TODO: send out packets here
+			/* TODO: send out packets here
 			 * If next hop is not known then broadcast using for loop code
 			 */
 			if(!toSend.known)
@@ -291,18 +291,37 @@ int main (int argc, char *argv[])
 					}
 					else
 					{	
+						PacketQ pkt;
+						
 						// Determine which port the packet came in on
 						struct sockaddr_in peerAddr;
 						socklen_t peerAddrLen = sizeof peerAddr;
-						getpeername(i, &peerAddr, &peerAddrLen);
+						getpeername(i,  (sockaddr*) &peerAddr, &peerAddrLen);
 						
 						// If the port isn't in the self-learn table, then add it
 						if(selfLearnTable.find(peerAddr.sin_port) == selfLearnTable.end()) {
 							MacTableEntry entry;
-							//memcpy(&(entry.mac), &buf[6], 6); // mac address will have to be extracted from the ethernet packet
-							gettimeofday(entry.timeStamp, NULL);
-							selfLearnTable.insert(pair<unsigned long, MacTableEntry>(peerAddr.sin_port, entry);
+							// &buf[6] should refer to the MacAddr src field of Ethernet Pkt
+							memcpy(&(entry.mac), &buf[6], 6);
+							gettimeofday(&entry.timeStamp, NULL);
+							selfLearnTable.insert(pair<unsigned long, MacTableEntry>(peerAddr.sin_port, entry));
 						}
+						
+						// Lookup destination mac address in self learn table to see if port is known
+						MacAddr dest;
+						memcpy(&dest, &buf[0], 6);
+						
+						// If the destination is in the self learn  table, make sure the PacketQ known
+						// value gets set to true, so that we do not broadcast it
+						for(auto &it : selfLearnTable) {
+							if(it.second.mac == dest) {
+								pkt.known = true;
+								pkt.port = it.first;
+								break;
+							}
+						}
+						
+						recPackets.push(pkt);
 					}
 				}
 			}
