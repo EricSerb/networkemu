@@ -39,7 +39,6 @@ typedef struct rtable {
 	IPAddr nexthop;
 	IPAddr mask;
 	char ifacename[32];
-	timeval timer;
 } Rtable;
 
 
@@ -74,7 +73,7 @@ typedef struct arp_pkt
 	MacAddr srcmac;
 	IPAddr dstip;
 	MacAddr dstmac;
-} ARP_PKT;
+}__attribute__(( packed )) ARP_PKT;
 
 /*IP packet format*/
 typedef struct ip_pkt
@@ -85,7 +84,7 @@ typedef struct ip_pkt
 	unsigned long    sequenceno;
 	short   length;
 	char    data[BUFSIZE];
-} IP_PKT;
+}__attribute__(( packed )) IP_PKT;
 
 /*queue for ip packet that has not yet sent out
 typedef struct p_queue
