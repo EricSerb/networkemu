@@ -165,7 +165,8 @@ int main (int argc, char *argv[])
 	string hostName;
 	hostName.assign(argv[1]);
 	ofstream hostFile;
-	hostName += ".txt";
+	//Don't need .txt so just make it the name of bridge
+	//hostName += ".txt";
 	hostFile.open(hostName.c_str(), std::ofstream::out);
 	
 	hostFile << argv[1] << " " << inet_ntoa(saddr.sin_addr) << " " <<  ntohs(saddr.sin_port);
@@ -278,13 +279,13 @@ int main (int argc, char *argv[])
 						if(nbytes == 0)
 						{
 							cout << argv[0] << ": socket " << i << " hung up" << endl;
-							portCount--; //decrease count since client no longer using port
 						}
 						else
 						{
 							cout << "Bridge recv() error..." << endl;
 						}
 
+						portCount--; //decrease count since client no longer using port
 						close(i);
 						FD_CLR(i, &master);
 
