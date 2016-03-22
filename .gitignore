@@ -3,3 +3,4 @@ bridge.o
 station
 station.o
 string_utils.o
+parser.o
