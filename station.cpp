@@ -39,7 +39,7 @@ void dumpInterfaces(vector<iface> ifaces)
 {
 	cout << "INTERFACES" << endl;
 	cout << "NAME\tIP\tSUBNET\tMAC" << endl;
-	for(int i = 0; i < ifaces.size(); ++i) {
+	for(unsigned int i = 0; i < ifaces.size(); ++i) {
 		cout << ifaces[i].ifacename << "\t";
 		cout << ntop(ifaces[i].ipaddr) << "\t";
 		cout << ntop(ifaces[i].mask) << "\t";
@@ -65,7 +65,7 @@ void dumpRtables(vector<rtable> entries)
 {
 	cout << "ROUTING TABLE" << endl;
 	cout << "DESTINATION\tNEXT HOP\tMASK\tINTERFACE" << endl;
-	for (int i = 0; i < entries.size(); ++i) {
+	for (unsigned int i = 0; i < entries.size(); ++i) {
 		cout << ntop(entries[i].destsubnet) << "\t";
 		cout << ntop(entries[i].nexthop) << "\t";
 		cout << ntop(entries[i].mask) << "\t";
@@ -79,14 +79,17 @@ void dumpRtables(vector<rtable> entries)
 /**
  * Display host information
  */
-void dumpHost(Host h)
+void dumpHosts(vector<Host> hosts)
 {
 	cout << "HOST INFORMATION" << endl;
 	cout << "HOSTNAME\tIP ADDRESS\tPORT" << endl;
-	cout << h.name << "\t";
-	cout << ntop(h.addr) << "\t";
-	cout << h.port << endl;
-}
+	for(unsigned int i = 0; i < hosts.size(); ++i) {
+		cout << hosts[i].name << "\t";
+		cout << ntop(hosts[i].addr) << "\t";
+		cout << hosts[i].port << endl;
+	}
+	cout << endl;
+}	
 
 /**
  * Parse an interface file.
@@ -184,9 +187,10 @@ vector<rtable> extractRouteTable(string fn)
 }
 
 /**
- * Parse a hostfile.
+ * Parse a hostfile.  This file acts as our DNS lookup table, and can
+ * contain multiple hosts.
  */
-Host extractHost(string fn)
+vector<Host> extractHosts(string fn)
 {
 	ifstream hostFile(fn.c_str());
 	
@@ -196,29 +200,30 @@ Host extractHost(string fn)
 	}
 	
 	string line;
-	
+	vector<Host> hosts;
 	//TODO: probably should do some error checking to make sure host is valid
-	getline(hostFile, line);
+	while(getline(hostFile, line)) {
+		stringstream linestream(line);
+		
+		string name;
+		string addr;
+		int port;
+		
+		linestream >> name >> addr >> port;
+		
+		Host h;
+		
+		strcpy(h.name, name.c_str());
+		
+		sockaddr_in sa;
+		inet_pton(AF_INET, addr.c_str(), &(sa.sin_addr));
+		h.addr = sa.sin_addr.s_addr;
+		
+		h.port = port;
+		hosts.push_back(h);
+	}
 	
-	stringstream linestream(line);
-	
-	string name;
-	string addr;
-	int port;
-	
-	linestream >> name >> addr >> port;
-	
-	Host h;
-	
-	strcpy(h.name, name.c_str());
-	
-	sockaddr_in sa;
-	inet_pton(AF_INET, addr.c_str(), &(sa.sin_addr));
-	h.addr = sa.sin_addr.s_addr;
-	
-	h.port = port;
-	
-	return h;
+	return hosts;
 }
 
 /*----------------------------------------------------------------*/
@@ -256,9 +261,10 @@ int main (int argc, char *argv[])
 	
 	fn = argv[4];
 	
-	Host bridge = extractHost(fn);
+	// This is essentially our DNS lookup table
+	vector<Host> hosts = extractHosts(fn);
 	
-	dumpHost(bridge);
+	dumpHosts(hosts);
 
 	/* hook to the lans that the station should connected to
 	* note that a station may need to be connected to multilple lans
