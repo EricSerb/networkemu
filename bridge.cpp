@@ -25,9 +25,20 @@
 #include <fstream>
 #include "ip.h"
 #include <cstring>
+#include <map>
 /*----------------------------------------------------------------*/
 
 using namespace std;
+
+/**
+ * The structure to be included as the value for the
+ * self learn map (port => MacTableEntry)
+ */
+struct MacTableEntry
+{
+	MacAddr mac;
+	timeval timeStamp;
+};
 
 /* bridge : recvs pkts and relays them */
 /* usage: bridge lan-name max-port */
@@ -80,6 +91,7 @@ int main (int argc, char *argv[])
 	{
 		cout << "Command line must include: .exe, lan-name, num-ports" << endl;
 		cout << "Bridge failure..." << endl;
+		exit(1);
 	}
 
 	//socket
@@ -165,6 +177,9 @@ int main (int argc, char *argv[])
 	cout << "Server address = " << inet_ntoa(saddr.sin_addr) << endl;
 	cout << "Server port number = " << ntohs(saddr.sin_port) << endl;
 	*/
+	
+	// The self learn table.  sin_port of is type unsigned short
+	map<unsigned short, MacTableEntry> selfLearnTable;
 
 	for(;;)
 	{
@@ -275,23 +290,19 @@ int main (int argc, char *argv[])
 
 					}
 					else
-					{
-						/*TODO:look up next hop in routing table and if not in there then broadcast
-						 * Add the packet to the queue
-						 * Add the source MAC if not in the routing table
-						 *
-						 */
-
-						//Need to add the packet to the Queue and look up the next_hop_IPaddr from routing table
-						//Get dst_IP from packet
-						addToQ.packet = newPacket;
-
-						//addToQ.dst_ipaddr = newPacket.ip.dstip;
-
+					{	
+						// Determine which port the packet came in on
+						struct sockaddr_in peerAddr;
+						socklen_t peerAddrLen = sizeof peerAddr;
+						getpeername(i, &peerAddr, &peerAddrLen);
 						
-
-						memset(&newPacket, 0, sizeof(addToQ));
-						memset(&addToQ, 0, sizeof(addToQ));
+						// If the port isn't in the self-learn table, then add it
+						if(selfLearnTable.find(peerAddr.sin_port) == selfLearnTable.end()) {
+							MacTableEntry entry;
+							//memcpy(&(entry.mac), &buf[6], 6); // mac address will have to be extracted from the ethernet packet
+							gettimeofday(entry.timeStamp, NULL);
+							selfLearnTable.insert(pair<unsigned long, MacTableEntry>(peerAddr.sin_port, entry);
+						}
 					}
 				}
 			}
