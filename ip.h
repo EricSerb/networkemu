@@ -95,13 +95,19 @@ typedef struct p_queue
 	struct p_queue *next;
 } PENDING_QUEUE;*/
 
-/*queue to hold packets and tell where they need to go next*/
+/*queue to hold packets and tell where they need to go next
+ * @buf will hold the bytes received
+ * @port the port which data was received on
+ * @known if the port is in the lookup table, it is known.  otherwise,
+ * 	this variable is used when sending queued packets.  If known is set
+ * 	to false, we must broadcast the packet to every open file descriptor
+ * 	associated with the bridge (except for STDIN/OUT/ERR
+ * /
 typedef struct packet_queue
 {
-	EtherPkt packet;
+	unsigned char buf[BUFSIZE];
 	int port;
-	IPAddr next_hop_ipaddr;
-	IPAddr dst_ipaddr;
+	bool known = false;
 } PacketQ;
 
 /*-------------------------------------------------------------------- */
