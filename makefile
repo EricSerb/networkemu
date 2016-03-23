@@ -1,8 +1,8 @@
 CC     = g++
-CXXFLAGS = -std=c++11 -Wall
-DEPS = ether.h ip.h
+CXXFLAGS = -std=c++11 -Wall -I.
+INCLUDES = ip.h
 
-%.o: %.cpp $(DEPS)
+%.o: %.cpp
 	$(CC) -c -o $@ $< $(CXXFLAGS)
 
 all: bridge station 

@@ -1,6 +1,5 @@
 #ifndef IP_H
 #define IP_H
-#include "ether.h"
 #include <sys/time.h>
 
 /* ARP packet types */
@@ -12,9 +11,16 @@
 #define PROT_TYPE_TCP 1
 #define PROT_TYPE_OSPF 2
 
+#define PEER_CLOSED 2
+
+#define TYPE_IP_PKT 1
+#define TYPE_ARP_PKT 0
+
 #define BUFSIZE 1024
 
 typedef unsigned long IPAddr;
+
+typedef unsigned char MacAddr[6];
 
 /* Structure to represent an interface */
 
@@ -85,6 +91,31 @@ typedef struct ip_pkt
 	short   length;
 	char    data[BUFSIZE/2];
 }__attribute__(( packed )) IP_PKT;
+
+/* structure of an ethernet pkt */
+typedef struct __etherpkt 
+{
+	/* destination address in net order */
+	MacAddr dst;
+
+	/* source address in net order */
+	MacAddr src;
+
+	/************************************/
+	/* payload type in host order       */
+	/* type = 0 : ARP frame             */
+	/* type = 1 : IP  frame             */
+	/************************************/
+	short  type;
+
+	/* size of the data in host order */
+	short   size;
+
+	/* actual payload */
+	//ARP_PKT arp;
+	IP_PKT ip;
+
+}__attribute__(( packed )) EtherPkt;
 
 /*queue for ip packet that has not yet sent out
 typedef struct p_queue
