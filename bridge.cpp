@@ -26,6 +26,8 @@
 #include "ip.h"
 #include <cstring>
 #include <map>
+
+#define DEBUG
 /*----------------------------------------------------------------*/
 
 using namespace std;
@@ -318,7 +320,12 @@ int main (int argc, char *argv[])
 							selfLearnTable.insert(pair<unsigned long, MacTableEntry>(peerAddr.sin_port, entry));
 						}
 					*/
-						
+					#ifndef DEBUG
+						//Cout for testing that we are receiving packets correctly
+						cout << ">>" << buff << endl << endl;
+					#endif
+
+						strcpy(pkt.buf, buf);
 						MacAddr src;
 						memcpy(&src, &buf[6], 6);
 						//If the MacAddr is not in the self-learn table, then add it
@@ -334,6 +341,19 @@ int main (int argc, char *argv[])
 							gettimeofday(&entry.timeStamp, NULL);
 							selfLearnTable.insert(pair<unsigned char*, MacTableEntry>(src, entry));
 						}
+
+						#ifndef DEBUG
+						{
+						cout << "*******Testing the self learn table*******" << endl;
+						for(auto &it : selfLearnTable)
+						{
+							cout << "Mac == " << it.first << endl;
+							cout << "Port == " << it.second.port << endl << endl;
+						}
+						}
+						#endif
+
+						cout << "*******End self learn table testing*******" << endl;
 						// Lookup destination mac address in self learn table to see if port is known
 						MacAddr dest;
 						memcpy(&dest, &buf[0], 6);
