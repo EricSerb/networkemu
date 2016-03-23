@@ -83,7 +83,7 @@ typedef struct ip_pkt
 	short   protocol;
 	unsigned long    sequenceno;
 	short   length;
-	char    data[BUFSIZE];
+	char    data[BUFSIZE/2];
 }__attribute__(( packed )) IP_PKT;
 
 /*queue for ip packet that has not yet sent out

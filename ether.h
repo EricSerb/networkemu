@@ -1,7 +1,6 @@
 #ifndef ETHER_H
 #define ETHER_H
 
-
 #include "ip.h"
 
 #define PEER_CLOSED 2
@@ -31,7 +30,7 @@ typedef struct __etherpkt
 
 	/* actual payload */
 	//ARP_PKT arp;
-	//IP_PKT ip;
+	IP_PKT ip;
 
 }__attribute__(( packed )) EtherPkt;
 

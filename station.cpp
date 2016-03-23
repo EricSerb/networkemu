@@ -135,7 +135,7 @@ int main (int argc, char *argv[])
 		select(maxFd+1, &readSet, NULL, NULL, NULL);
 		
 		int bytesRead = 0;
-		char buf[BUFSIZE];
+		char buf[BUFSIZE/2];
 		memset(buf, '\0', sizeof buf);
 		
 		for(int i = 0; i <= maxFd; ++i) {
@@ -153,9 +153,26 @@ int main (int argc, char *argv[])
 				else if(i == fileno(stdin)) {
 					bytesRead = read(i, buf, sizeof buf);
 					
+					EtherPkt pkt;
+					//TODO:  this only works for stations with more than one NIC and
+					// we need to figure out how to determine where to send a packet
+					memcpy(pkt.src, ifaces[0].macaddr, sizeof ifaces[0].macaddr);
+					memcpy(pkt.dst, ifaces[1].macaddr, sizeof ifaces[1].macaddr);
+
+					pkt.type = 1;
+					pkt.size = sizeof buf;
+					
+					IP_PKT ipPkt;
+					memcpy(&ipPkt.data, &buf, sizeof buf);
+					
+					pkt.ip = ipPkt;
+					
+					char outbuf[BUFSIZE];
+					memcpy(&outbuf, &pkt, sizeof pkt);
+					
 					if(bytesRead > 0) {
 						// TODO:  Which bridge should stdin be sent on?
-						if(send(sockFd[0], buf, bytesRead, 0) <= 0)
+						if(send(sockFd[0], outbuf, bytesRead, 0) <= 0)
 							perror("send()");
 					}
 				}
