@@ -321,7 +321,7 @@ int main (int argc, char *argv[])
 					
 						//Cout for testing that we are receiving packets correctly
 						cout << ">>" << buf << endl << endl;
-
+#if false
 						strcpy(pkt.buf, buf);
 						MacAddr src;
 						memcpy(&src, &buf[6], 6);
@@ -365,6 +365,7 @@ int main (int argc, char *argv[])
 						}
 						
 						recPackets.push(pkt);
+#endif
 					}
 				}
 			}

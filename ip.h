@@ -93,7 +93,10 @@ typedef struct ip_pkt
 	char    data[BUFSIZE/2];
 }__attribute__(( packed )) IP_PKT;
 
-/* structure of an ethernet pkt */
+/* structure of an ethernet pkt
+ * We can copy the contents of an IP_PKT data buffer to this data buffer
+ * when it is time for a station to construct a packet to send via MAC address
+ */
 typedef struct __etherpkt 
 {
 	/* destination address in net order */
@@ -113,8 +116,7 @@ typedef struct __etherpkt
 	short   size;
 
 	/* actual payload */
-	//ARP_PKT arp;
-	IP_PKT ip;
+	char data[BUFSIZE/2];
 
 }__attribute__(( packed )) EtherPkt;
 

@@ -7,10 +7,10 @@ INCLUDES = ip.h
 
 all: bridge station 
 
-bridge: bridge.o
+bridge: bridge.o parser.o
 	g++ -o $@ $^ $(CXXFLAGS)
 
-station: station.o parser.o
+station: station.o parser.o maclayer.o
 	g++ -o $@ $^ $(CXXFLAGS)
 
 clean : 
