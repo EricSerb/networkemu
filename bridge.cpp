@@ -179,7 +179,7 @@ int main (int argc, char *argv[])
 	*/
 	
 	// The self learn table.  sin_port of is type unsigned short
-	map<unsigned char*, MacTableEntry> selfLearnTable;
+	map<string, MacTableEntry> selfLearnTable;
 
 	for(;;)
 	{
@@ -320,11 +320,11 @@ int main (int argc, char *argv[])
 					*/
 					
 						//Cout for testing that we are receiving packets correctly
-						cout << ">>" << buf << endl << endl;
-#if false
+						//cout << ">>" << buf << endl << endl;
+
 						strcpy(pkt.buf, buf);
-						MacAddr src;
-						memcpy(&src, &buf[6], 6);
+						string src;
+						memcpy(&src, &buf[17], 17);
 
 						// Determine which port the packet came in on
 						struct sockaddr_in peerAddr;
@@ -339,7 +339,7 @@ int main (int argc, char *argv[])
 							MacTableEntry entry;
 							entry.port = peerAddr.sin_port;
 							gettimeofday(&entry.timeStamp, NULL);
-							selfLearnTable.insert(pair<unsigned char*, MacTableEntry>(src, entry));
+							selfLearnTable.insert(pair<string, MacTableEntry>(src, entry));
 						}
 
 						
@@ -351,8 +351,8 @@ int main (int argc, char *argv[])
 						}
 						cout << "*******End self learn table testing*******" << endl;
 						// Lookup destination mac address in self learn table to see if port is known
-						MacAddr dest;
-						memcpy(&dest, &buf[0], 6);
+						string dest;
+						memcpy(&dest, &buf[17], 17);
 						
 						// If the destination is in the self learn  table, make sure the PacketQ known
 						// value gets set to true, so that we do not broadcast it
@@ -365,7 +365,7 @@ int main (int argc, char *argv[])
 						}
 						
 						recPackets.push(pkt);
-#endif
+
 					}
 				}
 			}
