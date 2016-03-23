@@ -26,8 +26,6 @@
 #include "ip.h"
 #include <cstring>
 #include <map>
-
-#define DEBUG
 /*----------------------------------------------------------------*/
 
 using namespace std;
@@ -215,8 +213,8 @@ int main (int argc, char *argv[])
 					//send to everyone
 					if(FD_ISSET(j, &master))
 					{
-						//except the listener and server
-						if(j != listener && j != i)
+						//except the listener and server and port sent in on
+						if(j != listener && j != i && j != toSend.ownport)
 						{
 							//cout << buf << " i = " << j << endl;
 							if(send(j, &toSend.buf[0], sizeof(toSend.buf), 0) == -1)
@@ -320,21 +318,23 @@ int main (int argc, char *argv[])
 							selfLearnTable.insert(pair<unsigned long, MacTableEntry>(peerAddr.sin_port, entry));
 						}
 					*/
-					#ifndef DEBUG
+					
 						//Cout for testing that we are receiving packets correctly
-						cout << ">>" << buff << endl << endl;
-					#endif
+						cout << ">>" << buf << endl << endl;
 
 						strcpy(pkt.buf, buf);
 						MacAddr src;
 						memcpy(&src, &buf[6], 6);
+
+						// Determine which port the packet came in on
+						struct sockaddr_in peerAddr;
+						socklen_t peerAddrLen = sizeof peerAddr;
+						getpeername(i,  (sockaddr*) &peerAddr, &peerAddrLen);
+
+						pkt.ownport = peerAddr.sin_port;
 						//If the MacAddr is not in the self-learn table, then add it
 						if(selfLearnTable.find(src) == selfLearnTable.end())
 						{
-							// Determine which port the packet came in on
-							struct sockaddr_in peerAddr;
-							socklen_t peerAddrLen = sizeof peerAddr;
-							getpeername(i,  (sockaddr*) &peerAddr, &peerAddrLen);
 							//Create the MacTableEntry to hold the port and timeStamp
 							MacTableEntry entry;
 							entry.port = peerAddr.sin_port;
@@ -342,17 +342,13 @@ int main (int argc, char *argv[])
 							selfLearnTable.insert(pair<unsigned char*, MacTableEntry>(src, entry));
 						}
 
-						#ifndef DEBUG
-						{
+						
 						cout << "*******Testing the self learn table*******" << endl;
 						for(auto &it : selfLearnTable)
 						{
 							cout << "Mac == " << it.first << endl;
 							cout << "Port == " << it.second.port << endl << endl;
 						}
-						}
-						#endif
-
 						cout << "*******End self learn table testing*******" << endl;
 						// Lookup destination mac address in self learn table to see if port is known
 						MacAddr dest;

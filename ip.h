@@ -105,7 +105,8 @@ typedef struct p_queue
  */
 typedef struct packet_queue
 {
-	unsigned char buf[BUFSIZE];
+	char buf[BUFSIZE];
+	int ownport;
 	int port;
 	bool known = false;
 } PacketQ;
