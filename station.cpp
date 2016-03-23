@@ -61,7 +61,7 @@ int main (int argc, char *argv[])
 	// We need to connect to each LAN as specified in the interfaces file.
 	// That means that, for each interface, we need to lookup <lan-name>.info
 	// and try to connect to the address/port contained within
-	for(int i = 0; i < ifaces.size(); ++i) {
+	for(unsigned int i = 0; i < ifaces.size(); ++i) {
 		string bridgeName(ifaces[i].lanname);
 		
 		string bridgeFile = bridgeName + ".info";
@@ -102,6 +102,28 @@ int main (int argc, char *argv[])
 		
 		cout << "Connected to " << addr << endl;
 		
+		// We must listen for an "accept" or "reject" string from the bridge
+		int bytesRead = 0;
+		char buf[BUFSIZE];
+		if((bytesRead = recv(sockFd[i], buf, sizeof buf, 0)) <= 0) {
+			cout << "recv error while listening for accept/reject" << endl;
+			return 1;
+		}
+	
+		if(strcmp(buf, "Reject") == 0) {
+			cout << addr << " rejected our connection!" << endl;
+			close(sockFd[i]);
+			continue;
+		}
+		else if (strcmp(buf, "Accept") == 0) {
+			cout << addr << " accepted our connection!" << endl;
+		}
+		else  {
+			cout << "Not sure what " << addr << " had to say about connecting to us.  Skipping it." << endl;
+			close(sockFd[i]);
+			continue;
+		}
+		
 		FD_SET(sockFd[i], &masterSet);
 		
 		if(sockFd[i] > maxFd)
@@ -121,7 +143,7 @@ int main (int argc, char *argv[])
 				if(i == sockFd[0]) {
 					// If no bytes are read, something is wrong.  Exit.
 					if((bytesRead = recv(i, buf, sizeof buf, 0)) <= 0) {
-						cout << "recv error" << endl;
+						cout << "recv error in select() loop" << endl;
 						return 1;
 					}
 					
