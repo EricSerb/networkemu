@@ -127,15 +127,16 @@ typedef struct lan_rout {
 	short counter;
 } LAN_ROUT;
 
-/* some global variables here */
+/*
+//some global variables here
 Host host[MAXHOSTS];
 int hostcnt;
 
 Iface iface_list[MAXINTER];
-/* if there is router on this lan, 1; else 0 */
+//if there is router on this lan, 1; else 0
 LAN_ROUT lan_router[MAXINTER];
 ITF2LINK link_socket[MAXINTER];
-int intr_cnt; /* counter for interface */
+int intr_cnt; //counter for interface 
 
 Rtable rt_table[MAXHOSTS*MAXINTER];
 int rt_cnt;
@@ -144,5 +145,5 @@ int rt_cnt;
 ARP_LIST *arp_cache;
 
 int ROUTER;
-
+*/
 #endif

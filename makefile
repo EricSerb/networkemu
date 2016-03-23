@@ -7,7 +7,7 @@ INCLUDES = ether.h ip.h
 
 all: bridge station 
 
-bridge: bridge.o string_utils.o
+bridge: bridge.o
 	g++ -o $@ $^ $(CXXFLAGS)
 
 station: station.o parser.o

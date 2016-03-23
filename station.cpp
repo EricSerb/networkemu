@@ -1,233 +1,10 @@
 /*-------------------------------------------------------*/
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
 
-#include <cstdlib>
-#include <iostream>
-#include <fstream>
-#include <iostream>
-#include <vector>
-#include <string>
-#include <cstring>
-#include <sstream>
-#include "string_utils.h"
-#include <iomanip>
-#include "ip.h"
-#include "ether.h"
+#include "parser.h"
+#include <unistd.h>
 
 using namespace std;
 /*----------------------------------------------------------------*/
-
-/**
- * Convert an IPAddr to its printable form.
- */
-string ntop(IPAddr addr)
-{
-	struct sockaddr_in sa;
-	sa.sin_addr.s_addr = addr;
-	
-	char str[INET_ADDRSTRLEN];
-	
-	inet_ntop(AF_INET, &(sa.sin_addr), str, INET_ADDRSTRLEN);
-	
-	return str;
-}
-
-/**
- * Display all entries found in a given iface vector.
- */
-void dumpInterfaces(vector<iface> ifaces)
-{
-	cout << "INTERFACES" << endl;
-	cout << "NAME\tIP\tSUBNET\tMAC" << endl;
-	for(unsigned int i = 0; i < ifaces.size(); ++i) {
-		cout << ifaces[i].ifacename << "\t";
-		cout << ntop(ifaces[i].ipaddr) << "\t";
-		cout << ntop(ifaces[i].mask) << "\t";
-		
-		for (int j = 0; j < 6; j++) {
-			cout << setfill('0') << setw(2) << hex << static_cast<int>(ifaces[i].macaddr[j]);
-			if(j < 5)
-				cout << ":";
-			if(j == 5)
-				cout << "\t";
-		}
-
-		cout << ifaces[i].lanname;
-		cout << endl;
-	}
-	cout << endl;
-}
-
-/**
- * Display all entries found in a given rtable vector.
- */
-void dumpRtables(vector<rtable> entries)
-{
-	cout << "ROUTING TABLE" << endl;
-	cout << "DESTINATION\tNEXT HOP\tMASK\tINTERFACE" << endl;
-	for (unsigned int i = 0; i < entries.size(); ++i) {
-		cout << ntop(entries[i].destsubnet) << "\t";
-		cout << ntop(entries[i].nexthop) << "\t";
-		cout << ntop(entries[i].mask) << "\t";
-		cout << entries[i].ifacename;
-		cout << endl;
-	}
-	cout << endl;
-	
-}
-
-/**
- * Display host information
- */
-void dumpHosts(vector<Host> hosts)
-{
-	cout << "HOST INFORMATION" << endl;
-	cout << "HOSTNAME\tIP ADDRESS\tPORT" << endl;
-	for(unsigned int i = 0; i < hosts.size(); ++i) {
-		cout << hosts[i].name << "\t";
-		cout << ntop(hosts[i].addr) << "\t";
-		cout << hosts[i].port << endl;
-	}
-	cout << endl;
-}	
-
-/**
- * Parse an interface file.
- */
-vector<iface> extractInterfaces(string fn)
-{
-	// Test parsing interface file
-	ifstream ifaceFile(fn.c_str());
-	
-	if(!ifaceFile.is_open()) {
-		cout << "Error opening " << fn << endl;
-		exit(1);
-	}
-	
-	//vector< vector<string> > lines;
-	vector<iface> ifaces;
-
-	// Parse interface file, which is split by whitespaces
-	string line;
-	while(getline(ifaceFile, line)) {
-		stringstream linestream(line);
-		string name;
-		string ip;
-		string subnet;
-		string mac;
-		string lan;
-		linestream >> name >> ip >> subnet >> mac >> lan;
-		
-		iface interface;
-		strcpy(interface.ifacename, name.c_str());
-		
-		struct sockaddr_in sa;
-		inet_pton(AF_INET, ip.c_str(),&(sa.sin_addr));
-		interface.ipaddr = sa.sin_addr.s_addr;
-		
-		inet_pton(AF_INET, subnet.c_str(),&(sa.sin_addr));
-		interface.mask = sa.sin_addr.s_addr;
-
-		unsigned int iMac[6];
-		int i;
-
-		sscanf(mac.c_str(), "%x:%x:%x:%x:%x:%x", &iMac[0], &iMac[1], &iMac[2], &iMac[3], &iMac[4], &iMac[5]);
-		for(i = 0;i < 6;i++)
-			interface.macaddr[i] = (unsigned char)iMac[i];
-
-		strcpy(interface.lanname, lan.c_str());
-		
-		ifaces.push_back(interface);
-	}
-	
-	return ifaces;
-}
-
-/**
- * Parse a routing table file.
- */
-vector<rtable> extractRouteTable(string fn)
-{
-	ifstream routeFile(fn.c_str());
-	
-	if(!routeFile.is_open()) {
-		cout << "Error opening " << fn << endl;
-		exit(1);
-	}
-	
-	vector<rtable> entries;
-	string line;
-	
-	while(getline(routeFile, line)) {
-		stringstream linestream(line);
-		string dest;
-		string nexthop;
-		string mask;
-		string ifacename;
-		linestream >> dest >> nexthop >> mask >> ifacename;
-		
-		rtable entry;
-		
-		struct sockaddr_in sa;
-		inet_pton(AF_INET, dest.c_str(), &(sa.sin_addr));
-		entry.destsubnet = sa.sin_addr.s_addr;
-		
-		inet_pton(AF_INET, nexthop.c_str(), &(sa.sin_addr));
-		entry.nexthop = sa.sin_addr.s_addr;
-		
-		inet_pton(AF_INET, mask.c_str(), &(sa.sin_addr));
-		entry.mask = sa.sin_addr.s_addr;
-		
-		strcpy(entry.ifacename, ifacename.c_str());
-		
-		entries.push_back(entry);
-	}
-	
-	return entries;
-}
-
-/**
- * Parse a hostfile.  This file acts as our DNS lookup table, and can
- * contain multiple hosts.
- */
-vector<Host> extractHosts(string fn)
-{
-	ifstream hostFile(fn.c_str());
-	
-	if(!hostFile.is_open()) {
-		cout << "Error opening " << fn << endl;
-		exit(1);
-	}
-	
-	string line;
-	vector<Host> hosts;
-	//TODO: probably should do some error checking to make sure host is valid
-	while(getline(hostFile, line)) {
-		stringstream linestream(line);
-		
-		string name;
-		string addr;
-		int port;
-		
-		linestream >> name >> addr >> port;
-		
-		Host h;
-		
-		strcpy(h.name, name.c_str());
-		
-		sockaddr_in sa;
-		inet_pton(AF_INET, addr.c_str(), &(sa.sin_addr));
-		h.addr = sa.sin_addr.s_addr;
-		
-		h.port = port;
-		hosts.push_back(h);
-	}
-	
-	return hosts;
-}
 
 /*----------------------------------------------------------------*/
 /* station : gets hooked to all the lans in its ifaces file, sends/recvs pkts */
@@ -272,49 +49,76 @@ int main (int argc, char *argv[])
 	/* hook to the lans that the station should connected to
 	* note that a station may need to be connected to multilple lans
 	*/
-	struct addrinfo hints;
-	memset(&hints, 0, sizeof hints);
 	
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
-	
-	struct addrinfo *res;
-	
-	if(argc < 3) {
-		cout << "Usage: ./chatclient <host> <port>" << endl;
-		return 1;
-	}
-	
-	getaddrinfo(argv[1], argv[2], &hints, &res);
-	
-	int sockFd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-	
-	if(connect(sockFd, res->ai_addr, res->ai_addrlen) < 0) {
-		perror("connect()");
-		return -1;
-	}
-	
-	cout << "Connected to server!" << endl;
-
 	fd_set masterSet;
 	FD_ZERO(&masterSet);
 	FD_SET(fileno(stdin), &masterSet);
-	FD_SET(sockFd, &masterSet);
 	
-	int maxFd = sockFd;
+	// The bridge sockets.  Currently hardcoded to only allow up to 2 bridges
+	int sockFd[2];
+	int maxFd = 0;
+	
+	// We need to connect to each LAN as specified in the interfaces file.
+	// That means that, for each interface, we need to lookup <lan-name>.info
+	// and try to connect to the address/port contained within
+	for(int i = 0; i < ifaces.size(); ++i) {
+		string bridgeName(ifaces[i].lanname);
+		
+		string bridgeFile = bridgeName + ".info";
+		
+		ifstream infile(bridgeFile.c_str());
+		
+		if(!infile.is_open()) {
+			cout << "Error opening " << bridgeFile << " ...skipping this bridge." << endl;
+			continue;
+		}
+		string line;
+		
+		getline(infile, line);
+		stringstream linestream(line);
+		
+		string addr;
+		string port;
+		
+		linestream >> addr >> port;
+		
+		struct addrinfo *res;
+		
+		struct addrinfo hints;
+		memset(&hints, 0, sizeof hints);
+	
+		hints.ai_family = AF_INET;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_flags = AI_PASSIVE;
+		
+		getaddrinfo(argv[1], argv[2], &hints, &res);
+		
+		sockFd[i] = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+
+		if(connect(sockFd[i], res->ai_addr, res->ai_addrlen) < 0) {
+			perror("connect()");
+			return -1;
+		}
+		
+		cout << "Connected to " << addr << endl;
+		
+		FD_SET(sockFd[i], &masterSet);
+		
+		if(sockFd[i] > maxFd)
+			maxFd = sockFd[i];
+	}
 	
 	while(true) {
 		fd_set readSet = masterSet;
 		select(maxFd+1, &readSet, NULL, NULL, NULL);
 		
 		int bytesRead = 0;
-		char buf[500];
+		char buf[BUFSIZE];
 		memset(buf, '\0', sizeof buf);
 		
 		for(int i = 0; i <= maxFd; ++i) {
 			if (FD_ISSET(i, &readSet)) {
-				if(i == sockFd) {
+				if(i == sockFd[0]) {
 					// If no bytes are read, something is wrong.  Exit.
 					if((bytesRead = recv(i, buf, sizeof buf, 0)) <= 0) {
 						cout << "recv error" << endl;
@@ -328,7 +132,8 @@ int main (int argc, char *argv[])
 					bytesRead = read(i, buf, sizeof buf);
 					
 					if(bytesRead > 0) {
-						if(send(sockFd, buf, bytesRead, 0) <= 0)
+						// TODO:  Which bridge should stdin be sent on?
+						if(send(sockFd[0], buf, bytesRead, 0) <= 0)
 							perror("send()");
 					}
 				}
