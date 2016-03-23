@@ -166,13 +166,14 @@ int main (int argc, char *argv[])
 						
 						cout << "ifaces[0] macaddr: " << ifaces[0].macaddr << endl;
 
+						// TODO:pkt.type is determined based on whether or not we need to look up a MAC address
+						// in the ARP cache
 						pkt.type = 1;
-						pkt.size = sizeof buf;
+						pkt.size = bytesRead;
 						
 						strcpy(pkt.data, buf);
 						vector<unsigned char> outBytes = writeEthernetPacketToBytes(pkt);
 						
-						//TODO: copy pkt byte for byte into unsigned char vector and then memcpy that to outbuf
 						char outbuf[BUFSIZE];
 						memcpy(&outbuf, &outBytes[0], outBytes.size());
 						
