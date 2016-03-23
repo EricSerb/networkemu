@@ -91,13 +91,13 @@ int main (int argc, char *argv[])
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_flags = AI_PASSIVE;
 		
-		getaddrinfo(argv[1], argv[2], &hints, &res);
+		getaddrinfo(addr.c_str(), port.c_str(), &hints, &res);
 		
 		sockFd[i] = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
 		if(connect(sockFd[i], res->ai_addr, res->ai_addrlen) < 0) {
 			perror("connect()");
-			return -1;
+			continue;
 		}
 		
 		cout << "Connected to " << addr << endl;
