@@ -36,7 +36,7 @@ using namespace std;
  */
 struct MacTableEntry
 {
-	MacAddr mac;
+	int port;
 	timeval timeStamp;
 };
 
@@ -165,11 +165,10 @@ int main (int argc, char *argv[])
 	string hostName;
 	hostName.assign(argv[1]);
 	ofstream hostFile;
-	//Don't need .txt so just make it the name of bridge
-	//hostName += ".txt";
+	hostName += ".info";
 	hostFile.open(hostName.c_str(), std::ofstream::out);
 	
-	hostFile << argv[1] << " " << inet_ntoa(saddr.sin_addr) << " " <<  ntohs(saddr.sin_port);
+	hostFile << inet_ntoa(saddr.sin_addr) << " " <<  ntohs(saddr.sin_port);
 
 	hostFile.close();
 	//No longer need to put out name and address as stations will read this from a file
@@ -180,19 +179,30 @@ int main (int argc, char *argv[])
 	*/
 	
 	// The self learn table.  sin_port of is type unsigned short
-	map<unsigned short, MacTableEntry> selfLearnTable;
+	map<unsigned char*, MacTableEntry> selfLearnTable;
 
 	for(;;)
 	{
 		memset(&buf, 0, sizeof(buf));
 		read_fds = master;
+
+		//Get the current time and then erase entries in the map if they are older than 30 seconds
+		timeval currentTime;
+		gettimeofday(&currentTime, NULL);
+
 		
-		//TODO: Do we want this as while to send all or if to send one at a time?
+		for(auto &it : selfLearnTable) {
+			if((currentTime.tv_sec - it.second.timeStamp.tv_sec) > 30) {
+				selfLearnTable.erase(it.first);
+			}
+		}
+		
+		//Send out all the packets in the Queue
 		while(!recPackets.empty())
 		{
 			PacketQ toSend = recPackets.front();
 			recPackets.pop();
-			/* TODO: send out packets here
+			/* Send out packets here
 			 * If next hop is not known then broadcast using for loop code
 			 */
 			if(!toSend.known)
@@ -294,11 +304,7 @@ int main (int argc, char *argv[])
 					{	
 						PacketQ pkt;
 						
-						// Determine which port the packet came in on
-						struct sockaddr_in peerAddr;
-						socklen_t peerAddrLen = sizeof peerAddr;
-						getpeername(i,  (sockaddr*) &peerAddr, &peerAddrLen);
-						
+					/*	
 						// If the port isn't in the self-learn table, then add it
 						if(selfLearnTable.find(peerAddr.sin_port) == selfLearnTable.end()) {
 							MacTableEntry entry;
@@ -307,7 +313,23 @@ int main (int argc, char *argv[])
 							gettimeofday(&entry.timeStamp, NULL);
 							selfLearnTable.insert(pair<unsigned long, MacTableEntry>(peerAddr.sin_port, entry));
 						}
+					*/
 						
+						MacAddr src;
+						memcpy(&src, &buf[6], 6);
+						//If the MacAddr is not in the self-learn table, then add it
+						if(selfLearnTable.find(src) == selfLearnTable.end())
+						{
+							// Determine which port the packet came in on
+							struct sockaddr_in peerAddr;
+							socklen_t peerAddrLen = sizeof peerAddr;
+							getpeername(i,  (sockaddr*) &peerAddr, &peerAddrLen);
+							//Create the MacTableEntry to hold the port and timeStamp
+							MacTableEntry entry;
+							entry.port = peerAddr.sin_port;
+							gettimeofday(&entry.timeStamp, NULL);
+							selfLearnTable.insert(pair<unsigned char*, MacTableEntry>(src, entry));
+						}
 						// Lookup destination mac address in self learn table to see if port is known
 						MacAddr dest;
 						memcpy(&dest, &buf[0], 6);
@@ -315,9 +337,9 @@ int main (int argc, char *argv[])
 						// If the destination is in the self learn  table, make sure the PacketQ known
 						// value gets set to true, so that we do not broadcast it
 						for(auto &it : selfLearnTable) {
-							if(it.second.mac == dest) {
+							if(it.first == dest) {
 								pkt.known = true;
-								pkt.port = it.first;
+								pkt.port = it.second.port;
 								break;
 							}
 						}
