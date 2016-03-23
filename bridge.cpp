@@ -36,7 +36,7 @@ using namespace std;
  */
 struct MacTableEntry
 {
-	int port;
+	int socket;
 	timeval timeStamp;
 };
 
@@ -214,8 +214,9 @@ int main (int argc, char *argv[])
 					if(FD_ISSET(j, &master))
 					{
 						//except the listener and server and port sent in on
-						if(j != listener && j != i && j != toSend.ownport)
+						if(j != listener && j != i && j != toSend.socketIn)
 						{
+							cout << "j: " << j << endl;
 							//cout << buf << " i = " << j << endl;
 							if(send(j, &toSend.buf[0], sizeof(toSend.buf), 0) == -1)
 							{
@@ -227,7 +228,7 @@ int main (int argc, char *argv[])
 			}
 			else //we know the next hop just need to send to that port
 			{
-				if(send(toSend.port, &toSend.buf[0], sizeof(toSend.buf), 0) == -1)
+				if(send(toSend.socketOut, &toSend.buf[0], sizeof(toSend.buf), 0) == -1)
 				{
 					cout << "Bridge send() error..." << endl;
 				}
@@ -327,21 +328,21 @@ int main (int argc, char *argv[])
 						buffer.assign(buf);
 						string src;
 						src.assign(buffer, 17, 17);
-						cout << "src: " << src << endl;
+						//cout << "src: " << src << endl;
 						//memcpy(&src, &buf[17], 17);
 
 						// Determine which port the packet came in on
-						struct sockaddr_in peerAddr;
-						socklen_t peerAddrLen = sizeof peerAddr;
-						getpeername(i,  (sockaddr*) &peerAddr, &peerAddrLen);
+						//struct sockaddr_in peerAddr;
+						//socklen_t peerAddrLen = sizeof peerAddr;
+						//getpeername(i,  (sockaddr*) &peerAddr, &peerAddrLen);
 
-						pkt.ownport = peerAddr.sin_port;
+						pkt.socketIn = i;
 						//If the MacAddr is not in the self-learn table, then add it
 						if(selfLearnTable.find(src) == selfLearnTable.end())
 						{
 							//Create the MacTableEntry to hold the port and timeStamp
 							MacTableEntry entry;
-							entry.port = peerAddr.sin_port;
+							entry.socket = i;
 							gettimeofday(&entry.timeStamp, NULL);
 							selfLearnTable.insert(pair<string, MacTableEntry>(src, entry));
 						}
@@ -351,19 +352,20 @@ int main (int argc, char *argv[])
 						for(auto &it : selfLearnTable)
 						{
 							cout << "Mac == " << it.first << endl;
-							cout << "Port == " << it.second.port << endl << endl;
+							cout << "Port == " << it.second.socket << endl << endl;
 						}
 						cout << "*******End self learn table testing*******" << endl;
 						// Lookup destination mac address in self learn table to see if port is known
 						string dest;
-						memcpy(&dest, &buf[17], 17);
+						dest.assign(buffer, 0, 17);
+						//memcpy(&dest, &buf[17], 17);
 						
 						// If the destination is in the self learn  table, make sure the PacketQ known
 						// value gets set to true, so that we do not broadcast it
 						for(auto &it : selfLearnTable) {
 							if(it.first == dest) {
 								pkt.known = true;
-								pkt.port = it.second.port;
+								pkt.socketOut = it.second.socket;
 								break;
 							}
 						}

@@ -140,8 +140,8 @@ typedef struct p_queue
 typedef struct packet_queue
 {
 	char buf[BUFSIZE];
-	int ownport;
-	int port;
+	int socketIn;
+	int socketOut;
 	bool known = false;
 } PacketQ;
 
