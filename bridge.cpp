@@ -271,6 +271,10 @@ int main (int argc, char *argv[])
 								fdmax = newfd;
 							}
 
+							strcpy(buf, "Accept");
+							nbytes = 7;
+							send(newfd, buf, nbytes, 0);
+
 							cout << endl << endl << argv[0] << ": New connection from " << inet_ntoa(caddr.sin_addr) << " on socket " << newfd << endl;
 
 							cout << endl;
