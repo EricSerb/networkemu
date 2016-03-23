@@ -1,6 +1,7 @@
 /*-------------------------------------------------------*/
 
 #include "parser.h"
+#include <unistd.h>
 
 using namespace std;
 /*----------------------------------------------------------------*/
@@ -48,50 +49,76 @@ int main (int argc, char *argv[])
 	/* hook to the lans that the station should connected to
 	* note that a station may need to be connected to multilple lans
 	*/
-	/*
-	struct addrinfo hints;
-	memset(&hints, 0, sizeof hints);
 	
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
-	
-	struct addrinfo *res;
-	
-	if(argc < 3) {
-		cout << "Usage: ./chatclient <host> <port>" << endl;
-		return 1;
-	}
-	
-	getaddrinfo(argv[1], argv[2], &hints, &res);
-	
-	int sockFd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-	
-	if(connect(sockFd, res->ai_addr, res->ai_addrlen) < 0) {
-		perror("connect()");
-		return -1;
-	}
-	
-	cout << "Connected to server!" << endl;
-
 	fd_set masterSet;
 	FD_ZERO(&masterSet);
 	FD_SET(fileno(stdin), &masterSet);
-	FD_SET(sockFd, &masterSet);
 	
-	int maxFd = sockFd;
+	// The bridge sockets.  Currently hardcoded to only allow up to 2 bridges
+	int sockFd[2];
+	int maxFd = 0;
+	
+	// We need to connect to each LAN as specified in the interfaces file.
+	// That means that, for each interface, we need to lookup <lan-name>.info
+	// and try to connect to the address/port contained within
+	for(int i = 0; i < ifaces.size(); ++i) {
+		string bridgeName(ifaces[i].lanname);
+		
+		string bridgeFile = bridgeName + ".info";
+		
+		ifstream infile(bridgeFile.c_str());
+		
+		if(!infile.is_open()) {
+			cout << "Error opening " << bridgeFile << " ...skipping this bridge." << endl;
+			continue;
+		}
+		string line;
+		
+		getline(infile, line);
+		stringstream linestream(line);
+		
+		string addr;
+		string port;
+		
+		linestream >> addr >> port;
+		
+		struct addrinfo *res;
+		
+		struct addrinfo hints;
+		memset(&hints, 0, sizeof hints);
+	
+		hints.ai_family = AF_INET;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_flags = AI_PASSIVE;
+		
+		getaddrinfo(argv[1], argv[2], &hints, &res);
+		
+		sockFd[i] = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+
+		if(connect(sockFd[i], res->ai_addr, res->ai_addrlen) < 0) {
+			perror("connect()");
+			return -1;
+		}
+		
+		cout << "Connected to " << addr << endl;
+		
+		FD_SET(sockFd[i], &masterSet);
+		
+		if(sockFd[i] > maxFd)
+			maxFd = sockFd[i];
+	}
 	
 	while(true) {
 		fd_set readSet = masterSet;
 		select(maxFd+1, &readSet, NULL, NULL, NULL);
 		
 		int bytesRead = 0;
-		char buf[500];
+		char buf[BUFSIZE];
 		memset(buf, '\0', sizeof buf);
 		
 		for(int i = 0; i <= maxFd; ++i) {
 			if (FD_ISSET(i, &readSet)) {
-				if(i == sockFd) {
+				if(i == sockFd[0]) {
 					// If no bytes are read, something is wrong.  Exit.
 					if((bytesRead = recv(i, buf, sizeof buf, 0)) <= 0) {
 						cout << "recv error" << endl;
@@ -105,13 +132,14 @@ int main (int argc, char *argv[])
 					bytesRead = read(i, buf, sizeof buf);
 					
 					if(bytesRead > 0) {
-						if(send(sockFd, buf, bytesRead, 0) <= 0)
+						// TODO:  Which bridge should stdin be sent on?
+						if(send(sockFd[0], buf, bytesRead, 0) <= 0)
 							perror("send()");
 					}
 				}
 			}
 		}
-	}*/
+	}
 
 	/* monitoring input from users and bridges
 	* 1. from user: analyze the user input and send to the destination if necessary
