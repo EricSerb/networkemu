@@ -165,11 +165,10 @@ int main (int argc, char *argv[])
 	string hostName;
 	hostName.assign(argv[1]);
 	ofstream hostFile;
-	//Don't need .txt so just make it the name of bridge
-	//hostName += ".txt";
+	hostName += ".info";
 	hostFile.open(hostName.c_str(), std::ofstream::out);
 	
-	hostFile << argv[1] << " " << inet_ntoa(saddr.sin_addr) << " " <<  ntohs(saddr.sin_port);
+	hostFile << inet_ntoa(saddr.sin_addr) << " " <<  ntohs(saddr.sin_port);
 
 	hostFile.close();
 	//No longer need to put out name and address as stations will read this from a file
@@ -180,7 +179,7 @@ int main (int argc, char *argv[])
 	*/
 	
 	// The self learn table.  sin_port of is type unsigned short
-	map<MacAddr, MacTableEntry> selfLearnTable;
+	map<unsigned char*, MacTableEntry> selfLearnTable;
 
 	for(;;)
 	{
@@ -329,7 +328,7 @@ int main (int argc, char *argv[])
 							MacTableEntry entry;
 							entry.port = peerAddr.sin_port;
 							gettimeofday(&entry.timeStamp, NULL);
-							selfLearnTable.insert(pair<MacAddr, MacTableEntry>(src, entry));
+							selfLearnTable.insert(pair<unsigned char*, MacTableEntry>(src, entry));
 						}
 						// Lookup destination mac address in self learn table to see if port is known
 						MacAddr dest;
