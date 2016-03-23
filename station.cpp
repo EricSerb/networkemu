@@ -153,24 +153,39 @@ int main (int argc, char *argv[])
 				else if(i == fileno(stdin)) {
 					bytesRead = read(i, buf, sizeof buf);
 					
-					EtherPkt pkt;
-					//TODO:  this only works for stations with more than one NIC and
-					// we need to figure out how to determine where to send a packet
-					memcpy(pkt.src, ifaces[0].macaddr, sizeof ifaces[0].macaddr);
-					memcpy(pkt.dst, ifaces[1].macaddr, sizeof ifaces[1].macaddr);
-
-					pkt.type = 1;
-					pkt.size = sizeof buf;
-					
-					IP_PKT ipPkt;
-					memcpy(&ipPkt.data, &buf, sizeof buf);
-					
-					pkt.ip = ipPkt;
-					
-					char outbuf[BUFSIZE];
-					memcpy(&outbuf, &pkt, sizeof pkt);
-					
 					if(bytesRead > 0) {
+						EtherPkt pkt;
+						//TODO:  this only works for stations with more than one NIC and
+						// we need to figure out how to determine where to send a packet
+						memcpy(&pkt.src, &ifaces[0].macaddr, sizeof ifaces[0].macaddr);
+						memcpy(&pkt.dst, &ifaces[1].macaddr, sizeof ifaces[1].macaddr);
+						
+						cout << "ifaces[0] macaddr: " << ifaces[0].macaddr << endl;
+
+						pkt.type = 1;
+						pkt.size = sizeof buf;
+						
+						IP_PKT ipPkt;
+						memcpy(&ipPkt.data, &buf, sizeof buf);
+						
+						pkt.ip = ipPkt;
+						
+						cout << "SOURCE MAC: ";
+						for (int j = 0; j < 6; j++) {
+							cout << setfill('0') << setw(2) << hex << static_cast<int>(pkt.src[j]);
+							if(j < 5)
+								cout << ":";
+							if(j == 5)
+								cout << "\t";
+						}
+						cout << "data: " << pkt.ip.data << endl;
+						
+						//TODO: copy pkt byte for byte into unsigned char vector and then memcpy that to outbuf
+						char outbuf[BUFSIZE];
+						memcpy(&outbuf, &pkt, sizeof pkt);
+						
+						cout << "outbuf: " << outbuf << endl;
+						
 						// TODO:  Which bridge should stdin be sent on?
 						if(send(sockFd[0], outbuf, bytesRead, 0) <= 0)
 							perror("send()");

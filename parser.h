@@ -13,7 +13,6 @@
 #include <cstring>
 #include <sstream>
 #include <iomanip>
-#include "ether.h"
 
 std::string ntop(IPAddr addr);
 void dumpInterfaces(std::vector<iface> ifaces);
