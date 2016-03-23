@@ -323,8 +323,12 @@ int main (int argc, char *argv[])
 						//cout << ">>" << buf << endl << endl;
 
 						strcpy(pkt.buf, buf);
+						string buffer;
+						buffer.assign(buf);
 						string src;
-						memcpy(&src, &buf[17], 17);
+						src.assign(buffer, 17, 17);
+						cout << "src: " << src << endl;
+						//memcpy(&src, &buf[17], 17);
 
 						// Determine which port the packet came in on
 						struct sockaddr_in peerAddr;
