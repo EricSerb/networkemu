@@ -20,7 +20,8 @@
 
 typedef unsigned long IPAddr;
 
-typedef unsigned char MacAddr[6];
+//XX:XX:XX:XX:XX:XX + terminating character
+typedef char MacAddr[18];
 
 /* Structure to represent an interface */
 
@@ -30,7 +31,7 @@ typedef struct iface {
 	IPAddr mask;
 	MacAddr macaddr;
 	char lanname[32];
-} Iface;
+}__attribute__(( packed )) Iface;
 
 /* mapping between interface name and socket id representing link */
 typedef struct itface2link {

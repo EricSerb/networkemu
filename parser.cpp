@@ -23,19 +23,20 @@ string ntop(IPAddr addr)
 void dumpInterfaces(vector<iface> ifaces)
 {
 	cout << "INTERFACES" << endl;
-	cout << "NAME\tIP\tSUBNET\tMAC" << endl;
+	cout << "NAME\tIP\tSUBNET\tMAC\tLAN" << endl;
 	for(unsigned int i = 0; i < ifaces.size(); ++i) {
 		cout << ifaces[i].ifacename << "\t";
 		cout << ntop(ifaces[i].ipaddr) << "\t";
 		cout << ntop(ifaces[i].mask) << "\t";
 		
-		for (int j = 0; j < 6; j++) {
+		/*for (int j = 0; j < 6; j++) {
 			cout << setfill('0') << setw(2) << hex << static_cast<int>(ifaces[i].macaddr[j]);
 			if(j < 5)
 				cout << ":";
 			if(j == 5)
 				cout << "\t";
-		}
+		}*/
+		cout << ifaces[i].macaddr << "\t";
 
 		cout << ifaces[i].lanname;
 		cout << endl;
@@ -113,12 +114,9 @@ vector<iface> extractInterfaces(string fn)
 		inet_pton(AF_INET, subnet.c_str(),&(sa.sin_addr));
 		interface.mask = sa.sin_addr.s_addr;
 
-		unsigned int iMac[6];
-		int i;
-
-		sscanf(mac.c_str(), "%x:%x:%x:%x:%x:%x", &iMac[0], &iMac[1], &iMac[2], &iMac[3], &iMac[4], &iMac[5]);
-		for(i = 0;i < 6;i++)
-			interface.macaddr[i] = (unsigned char)iMac[i];
+		// Be sure to terminate the macaddr, lest we get strange errors..
+		strcpy(interface.macaddr, mac.c_str());
+		interface.macaddr[17] = '\0';
 
 		strcpy(interface.lanname, lan.c_str());
 		
