@@ -61,7 +61,6 @@ int main (int argc, char *argv[])
 	char buf[1024];
 	int yes = 1;
 	int addrlen;
-	int i, j;
 	int numPorts = atoi(argv[2]);
 	int portCount = 0;
 	string message;
@@ -209,17 +208,17 @@ int main (int argc, char *argv[])
 			if(!toSend.known)
 			{
 				//This is the code for sending out to all ports except the one received on
-				for(j = 0; j <= fdmax; j++)
+				for(int i = 0; i <= fdmax; i++)
 				{
 					//send to everyone
-					if(FD_ISSET(j, &master))
+					if(FD_ISSET(i, &master))
 					{
 						//except the listener and server and port sent in on
-						if(j != listener && j != i && j != toSend.socketIn)
+						if(i != listener && i != toSend.socketIn)
 						{
-							cout << "j: " << j << endl;
+							cout << "i: " << i << endl;
 							//cout << buf << " i = " << j << endl;
-							if(send(j, &toSend.buf[0], sizeof(toSend.buf), 0) == -1)
+							if(send(i, &toSend.buf[0], sizeof(toSend.buf), 0) == -1)
 							{
 								cout << "Bridge send() error..." << endl;
 							}
@@ -247,7 +246,7 @@ int main (int argc, char *argv[])
 		//cout << "Server select() ok..." << endl;
 
 		//check existing connections for anything to read
-		for(i = 0; i <= fdmax; i++)
+		for(int i = 0; i <= fdmax; i++)
 		{
 			if(FD_ISSET(i, &read_fds))
 			{
