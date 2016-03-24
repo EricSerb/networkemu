@@ -193,6 +193,7 @@ int main (int argc, char *argv[])
 		
 		for(auto &it : selfLearnTable) {
 			if((currentTime.tv_sec - it.second.timeStamp.tv_sec) > 30) {
+				cout << "Removing " << it.first << " from selfLearnTable" << endl;
 				selfLearnTable.erase(it.first);
 			}
 		}
@@ -232,10 +233,13 @@ int main (int argc, char *argv[])
 				{
 					cout << "Bridge send() error..." << endl;
 				}
+				
+				cout << "Sent to " << toSend.socketOut << endl;
 			}
 		}
-
-		if(select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1)
+		timeval timeout;
+		timeout.tv_sec = 0;
+		if(select(fdmax+1, &read_fds, NULL, NULL, &timeout) == -1)
 		{
 			cout << "Bridge select() error... CRASH!" << endl;
 			exit(1);
@@ -321,7 +325,6 @@ int main (int argc, char *argv[])
 					*/
 					
 						//Cout for testing that we are receiving packets correctly
-						//cout << ">>" << buf << endl << endl;
 
 						strcpy(pkt.buf, buf);
 						string buffer;
@@ -330,6 +333,8 @@ int main (int argc, char *argv[])
 						src.assign(buffer, 17, 17);
 						//cout << "src: " << src << endl;
 						//memcpy(&src, &buf[17], 17);
+						
+						cout << src << "==" << buf << endl << endl;
 
 						// Determine which port the packet came in on
 						//struct sockaddr_in peerAddr;
@@ -340,21 +345,29 @@ int main (int argc, char *argv[])
 						//If the MacAddr is not in the self-learn table, then add it
 						if(selfLearnTable.find(src) == selfLearnTable.end())
 						{
+							cout << "Adding " << src << " to self learn table" << endl;
 							//Create the MacTableEntry to hold the port and timeStamp
 							MacTableEntry entry;
 							entry.socket = i;
 							gettimeofday(&entry.timeStamp, NULL);
 							selfLearnTable.insert(pair<string, MacTableEntry>(src, entry));
 						}
+						// We know it exists, so update the timestamp
+						else {
+							auto it = selfLearnTable.find(src);
+							gettimeofday(&it->second.timeStamp, NULL);
+						}
 
-						
+#if false
 						cout << "*******Testing the self learn table*******" << endl;
 						for(auto &it : selfLearnTable)
 						{
 							cout << "Mac == " << it.first << endl;
-							cout << "Port == " << it.second.socket << endl << endl;
+							cout << "Port == " << it.second.socket << endl;
+							cout << "Timestamp == " << it.second.timeStamp.tv_sec << endl << endl;
 						}
 						cout << "*******End self learn table testing*******" << endl;
+#endif
 						// Lookup destination mac address in self learn table to see if port is known
 						string dest;
 						dest.assign(buffer, 0, 17);
@@ -364,6 +377,7 @@ int main (int argc, char *argv[])
 						// value gets set to true, so that we do not broadcast it
 						for(auto &it : selfLearnTable) {
 							if(it.first == dest) {
+								cout << dest << " is already in the selfLearnTable.  Updating time stamp" << endl;
 								pkt.known = true;
 								pkt.socketOut = it.second.socket;
 								break;

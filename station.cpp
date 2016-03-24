@@ -119,6 +119,7 @@ int main (int argc, char *argv[])
 		else if (strcmp(buf, "Accept") == 0) {
 			cout << addr << " accepted our connection!" << endl;
 		}
+		//TODO:  try to connect 5 times, then give up (as per writeup)
 		else  {
 			cout << "Not sure what " << addr << " had to say about connecting to us.  Skipping it." << endl;
 			close(sockFd[i]);
@@ -147,7 +148,7 @@ int main (int argc, char *argv[])
 						cout << "recv error in select() loop" << endl;
 						return 1;
 					}
-					
+					buf[bytesRead + 1] = '\0';
 					cout << ">>> " << buf;
 				}
 				
