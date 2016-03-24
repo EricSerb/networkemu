@@ -3,5 +3,5 @@
 #include <iostream>
 #include <string>
 
-string parseCommands(char *buf);
+std::string parseCommands(char *buf);
 

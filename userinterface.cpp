@@ -1,4 +1,7 @@
 #include "userinterface.h"
+#include <cstring>
+
+using namespace std;
 
 string parseCommands(char *buf)
 {

@@ -3,6 +3,7 @@
 #include "parser.h"
 #include <unistd.h>
 #include "maclayer.h"
+#include "userinterface.h"
 
 using namespace std;
 /*----------------------------------------------------------------*/

@@ -10,7 +10,7 @@ all: bridge station
 bridge: bridge.o parser.o
 	g++ -o $@ $^ $(CXXFLAGS)
 
-station: station.o parser.o maclayer.o
+station: station.o parser.o maclayer.o userinterface.o
 	g++ -o $@ $^ $(CXXFLAGS)
 
 clean : 
