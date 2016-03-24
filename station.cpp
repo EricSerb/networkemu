@@ -43,9 +43,9 @@ int main (int argc, char *argv[])
 	fn = argv[4];
 	
 	// This is essentially our DNS lookup table
-	vector<Host> hosts = extractHosts(fn);
+	map<string, IPAddr> hostMap = extractHosts(fn);
 	
-	//dumpHosts(hosts);
+	dumpHosts(hostMap);
 
 	/* hook to the lans that the station should connected to
 	* note that a station may need to be connected to multilple lans

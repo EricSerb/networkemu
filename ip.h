@@ -1,6 +1,7 @@
 #ifndef IP_H
 #define IP_H
 #include <sys/time.h>
+#include <string>
 
 /* ARP packet types */
 #define ARP_REQUEST 0
@@ -152,9 +153,8 @@ typedef struct packet_queue
 
 typedef struct host
 {
-	char name[32];
+	std::string name;
 	IPAddr addr;
-	int port;
 } Host;
 
 typedef struct lan_rout {

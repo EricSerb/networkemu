@@ -65,16 +65,15 @@ void dumpRtables(vector<rtable> entries)
 /**
  * Display host information
  */
-void dumpHosts(vector<Host> hosts)
+void dumpHosts(map<string, IPAddr> hosts)
 {
 	cout << "HOST INFORMATION" << endl;
-	cout << "HOSTNAME\tIP ADDRESS\tPORT" << endl;
-	for(unsigned int i = 0; i < hosts.size(); ++i) {
-		cout << hosts[i].name << "\t";
-		cout << ntop(hosts[i].addr) << "\t";
-		cout << hosts[i].port << endl;
+	cout << "HOSTNAME\tIP ADDRESS" << endl;
+	for(auto &it : hosts) {
+		cout << it.first << "\t";
+		cout << ntop(it.second) << "\t";
+		cout << endl;
 	}
-	cout << endl;
 }	
 
 /**
@@ -173,7 +172,7 @@ vector<rtable> extractRouteTable(string fn)
  * Parse a hostfile.  This file acts as our DNS lookup table, and can
  * contain multiple hosts.
  */
-vector<Host> extractHosts(string fn)
+map<string, IPAddr> extractHosts(string fn)
 {
 	ifstream hostFile(fn.c_str());
 	
@@ -183,27 +182,26 @@ vector<Host> extractHosts(string fn)
 	}
 	
 	string line;
-	vector<Host> hosts;
+	map<string, IPAddr> hosts;
 	//TODO: probably should do some error checking to make sure host is valid
 	while(getline(hostFile, line)) {
 		stringstream linestream(line);
 		
 		string name;
 		string addr;
-		int port;
 		
-		linestream >> name >> addr >> port;
+		linestream >> name >> addr;
 		
 		Host h;
 		
-		strcpy(h.name, name.c_str());
+		h.name = name;
 		
 		sockaddr_in sa;
 		inet_pton(AF_INET, addr.c_str(), &(sa.sin_addr));
 		h.addr = sa.sin_addr.s_addr;
 		
-		h.port = port;
-		hosts.push_back(h);
+		hosts.insert(pair<string, IPAddr>(h.name, h.addr));
+		
 	}
 	
 	return hosts;
