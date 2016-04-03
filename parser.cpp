@@ -18,65 +18,6 @@ string ntop(IPAddr addr)
 }
 
 /**
- * Display all entries found in a given iface vector.
- */
-void dumpInterfaces(vector<iface> ifaces)
-{
-	cout << "INTERFACES" << endl;
-	cout << "NAME\tIP\tSUBNET\tMAC\tLAN" << endl;
-	for(unsigned int i = 0; i < ifaces.size(); ++i) {
-		cout << ifaces[i].ifacename << "\t";
-		cout << ntop(ifaces[i].ipaddr) << "\t";
-		cout << ntop(ifaces[i].mask) << "\t";
-		
-		/*for (int j = 0; j < 6; j++) {
-			cout << setfill('0') << setw(2) << hex << static_cast<int>(ifaces[i].macaddr[j]);
-			if(j < 5)
-				cout << ":";
-			if(j == 5)
-				cout << "\t";
-		}*/
-		cout << ifaces[i].macaddr << "\t";
-
-		cout << ifaces[i].lanname;
-		cout << endl;
-	}
-	cout << endl;
-}
-
-/**
- * Display all entries found in a given rtable vector.
- */
-void dumpRtables(vector<rtable> entries)
-{
-	cout << "ROUTING TABLE" << endl;
-	cout << "DESTINATION\tNEXT HOP\tMASK\tINTERFACE" << endl;
-	for (unsigned int i = 0; i < entries.size(); ++i) {
-		cout << ntop(entries[i].destsubnet) << "\t";
-		cout << ntop(entries[i].nexthop) << "\t";
-		cout << ntop(entries[i].mask) << "\t";
-		cout << entries[i].ifacename;
-		cout << endl;
-	}
-	cout << endl;
-	
-}
-
-/**
- * Display host information
- */
-void dumpHosts(map<string, IPAddr> hosts)
-{
-	cout << "HOST INFORMATION" << endl;
-	cout << "HOSTNAME\tIP ADDRESS" << endl;
-	for(auto &it : hosts) {
-		cout << it.first << "\t";
-		cout << ntop(it.second) << "\t";
-		cout << endl;
-	}
-}	
-
-/**
  * Parse an interface file.
  */
 vector<iface> extractInterfaces(string fn)

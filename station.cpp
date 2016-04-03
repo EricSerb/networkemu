@@ -1,205 +1,173 @@
-/*-------------------------------------------------------*/
-
+#include "station.h"
 #include "parser.h"
+#include <iostream>
 #include <unistd.h>
-#include "maclayer.h"
-#include "userinterface.h"
 
 using namespace std;
-/*----------------------------------------------------------------*/
 
-/*----------------------------------------------------------------*/
-/* station : gets hooked to all the lans in its ifaces file, sends/recvs pkts */
-/* usage: station <-no -route> interface routingtable hostname */
-int main (int argc, char *argv[])
+Station::Station(bool routerFlag, string ifaceFile, string rtableFile, string hostFile)
 {
-	/* initialization of hosts, interface, and routing tables */
-	if(argc != 5) {
-		cout << "Usage: station <router flag> <interface file> <routing table> <hostname>" << endl;
-		exit(1);
-	}
+	m_router = routerFlag;
 	
-	// Check if we're a station or a router
-	bool router;
+	m_ifaces = extractInterfaces(ifaceFile);
+	m_rTableEntries = extractRouteTable(rtableFile);
+	m_hostMap = extractHosts(hostFile);
 	
-	if(strcmp(argv[1], "-router") < 0)
-		router = true;
-	else if(strcmp(argv[1], "-no") < 0)
-		router = false;
-	else {
-		cout << "Router flag must be `-no` or `-station`" << endl;
-		exit(1);
-	}
-	string fn(argv[2]);
-	vector<iface> ifaces = extractInterfaces(fn);
-	
-	dumpInterfaces(ifaces);
-	
-	fn = argv[3];
-	
-	vector<rtable> rtableEntries = extractRouteTable(fn);
-	
-	dumpRtables(rtableEntries);
-	
-	fn = argv[4];
-	
-	// This is essentially our DNS lookup table
-	map<string, IPAddr> hostMap = extractHosts(fn);
-	
-	dumpHosts(hostMap);
+	// At construction, we have not connected to anything.  Let's make sure
+	// we set a value that will not conflict with other FDs.
+	m_fd = -1;
+}
 
-	/* hook to the lans that the station should connected to
-	* note that a station may need to be connected to multilple lans
-	*/
-	
-	fd_set masterSet;
-	FD_ZERO(&masterSet);
-	FD_SET(fileno(stdin), &masterSet);
-	
-	// The bridge sockets.  Currently hardcoded to only allow up to 2 bridges
-	int sockFd[2];
-	int maxFd = 0;
-	
-	// We need to connect to each LAN as specified in the interfaces file.
-	// That means that, for each interface, we need to lookup <lan-name>.info
-	// and try to connect to the address/port contained within
-	for(unsigned int i = 0; i < ifaces.size(); ++i) {
-		string bridgeName(ifaces[i].lanname);
-		
-		string bridgeFile = bridgeName + ".info";
-		
-		ifstream infile(bridgeFile.c_str());
-		
-		if(!infile.is_open()) {
-			cout << "Error opening " << bridgeFile << " ...skipping this bridge." << endl;
-			continue;
-		}
-		string line;
-		
-		getline(infile, line);
-		stringstream linestream(line);
-		
-		string addr;
-		string port;
-		
-		linestream >> addr >> port;
-		
-		struct addrinfo *res;
-		
-		struct addrinfo hints;
-		memset(&hints, 0, sizeof hints);
-	
-		hints.ai_family = AF_INET;
-		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_flags = AI_PASSIVE;
-		
-		getaddrinfo(addr.c_str(), port.c_str(), &hints, &res);
-		
-		sockFd[i] = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+/**
+ * Parse through commands typed by the user and perform the appropriate I/O
+ */
+void Station::handleUserInput(char inputBuffer[BUFSIZE])
+{
 
-		if(connect(sockFd[i], res->ai_addr, res->ai_addrlen) < 0) {
-			perror("connect()");
-			continue;
-		}
-		
-		cout << "Connected to " << addr << endl;
-		
-		// We must listen for an "accept" or "reject" string from the bridge
-		int bytesRead = 0;
-		char buf[BUFSIZE];
-		if((bytesRead = recv(sockFd[i], buf, sizeof buf, 0)) <= 0) {
-			cout << "recv error while listening for accept/reject" << endl;
-			return 1;
-		}
-	
-		if(strcmp(buf, "Reject") == 0) {
-			cout << addr << " rejected our connection!" << endl;
-			close(sockFd[i]);
-			continue;
-		}
-		else if (strcmp(buf, "Accept") == 0) {
-			cout << addr << " accepted our connection!" << endl;
-		}
-		//TODO:  try to connect 5 times, then give up (as per writeup)
-		else  {
-			cout << "Not sure what " << addr << " had to say about connecting to us.  Skipping it." << endl;
-			close(sockFd[i]);
-			continue;
-		}
-		
-		FD_SET(sockFd[i], &masterSet);
-		
-		if(sockFd[i] > maxFd)
-			maxFd = sockFd[i];
-	}
-	
-	while(true) {
-		fd_set readSet = masterSet;
-		select(maxFd+1, &readSet, NULL, NULL, NULL);
-		
-		int bytesRead = 0;
-		char buf[BUFSIZE/2];
-		memset(buf, '\0', sizeof buf);
-		
-		for(int i = 0; i <= maxFd; ++i) {
-			if (FD_ISSET(i, &readSet)) {
-				if(i == sockFd[0]) {
-					// If no bytes are read, something is wrong.  Exit.
-					if((bytesRead = recv(i, buf, sizeof buf, 0)) <= 0) {
-						cout << "recv error in select() loop" << endl;
-						return 1;
-					}
-					buf[bytesRead + 1] = '\0';
-					cout << ">>> " << buf;
-				}
-				
-				else if(i == fileno(stdin)) {
-					bytesRead = read(i, buf, sizeof buf);
-					
-					if(bytesRead > 0) {
-						// Need to make sure to terminate this for proper copying
-						buf[bytesRead + 1] = '\0';
-						
-						EtherPkt pkt;
-						//TODO:  this only works for stations with more than one NIC and
-						// we need to figure out how to determine where to send a packet
-						strcpy(pkt.dst, ifaces[1].macaddr);
-						strcpy(pkt.src, ifaces[0].macaddr);
-						
-						cout << "ifaces[0] macaddr: " << ifaces[0].macaddr << endl;
+}
 
-						// TODO:pkt.type is determined based on whether or not we need to look up a MAC address
-						// in the ARP cache
-						pkt.type = 1;
-						pkt.size = bytesRead;
-						
-						strcpy(pkt.data, buf);
-						vector<unsigned char> outBytes = writeEthernetPacketToBytes(pkt);
-						
-						char outbuf[BUFSIZE];
-						memcpy(&outbuf, &outBytes[0], outBytes.size());
-						
-						cout << "outbuf: " << outbuf << endl;
-						
-						// TODO:  Which bridge should stdin be sent on?
-						if(send(sockFd[0], outbuf, outBytes.size(), 0) <= 0)
-							perror("send()");
-					}
-				}
-			}
-		}
-	}
+bool Station::router()
+{
+	return m_router;
+}
 
-	/* monitoring input from users and bridges
-	* 1. from user: analyze the user input and send to the destination if necessary
-	* 2. from bridge: check if it is for the station. Note two types of data
-	* in the ethernet frame: ARP packet and IP packet.
-	*
-	* for a router, it may need to forward the IP packet
-	*/
-	
-	return 0;
+int Station::socket()
+{
+	return m_fd;
+}
+
+/*
+ * Determine whether or not a socket is closed.  Intended to be used for checks
+ * against m_fd, where socket() is intended for assignments.
+ */
+bool Station::closed()
+{
+	return socket() == -1;
 }
 
 
+void Station::close()
+{
+	if(!closed())
+		::close(m_fd);
+	m_fd = -1;
+}
 
+
+void Station::displayInterfaces()
+{
+	cout << "INTERFACES" << endl;
+	cout << "NAME\tIP\tSUBNET\tMAC\tLAN" << endl;
+	for(unsigned int i = 0; i < m_ifaces.size(); ++i) {
+		cout << m_ifaces[i].ifacename << "\t";
+		cout << ntop(m_ifaces[i].ipaddr) << "\t";
+		cout << ntop(m_ifaces[i].mask) << "\t";
+		
+		cout << m_ifaces[i].macaddr << "\t";
+
+		cout << m_ifaces[i].lanname;
+		cout << endl;
+	}
+	cout << endl;
+}
+
+void Station::displayRouteTable()
+{
+	cout << "ROUTING TABLE" << endl;
+	cout << "DESTINATION\tNEXT HOP\tMASK\tINTERFACE" << endl;
+	for (unsigned int i = 0; i < m_rTableEntries.size(); ++i) {
+		cout << ntop(m_rTableEntries[i].destsubnet) << "\t";
+		cout << ntop(m_rTableEntries[i].nexthop) << "\t";
+		cout << ntop(m_rTableEntries[i].mask) << "\t";
+		cout << m_rTableEntries[i].ifacename;
+		cout << endl;
+	}
+	cout << endl;
+}
+
+void Station::displayHostMap()
+{
+	cout << "HOST INFORMATION" << endl;
+	cout << "HOSTNAME\tIP ADDRESS" << endl;
+	for(auto &it : m_hostMap) {
+		cout << it.first << "\t";
+		cout << ntop(it.second) << "\t";
+		cout << endl;
+	}
+}
+
+/**
+ * Attempt to connect to a bridge by looking at the .info file created
+ * by a bridge.
+ */
+void Station::connectToBridge()
+{
+	if(m_ifaces.size() <= 0)
+		return;
+	
+	//TODO:  support more than just one connection (try one per interface)
+	string bridgeName(m_ifaces[0].lanname);
+	
+	string bridgeFile = bridgeName + ".info";
+	
+	ifstream infile(bridgeFile.c_str());
+	
+	if(!infile.is_open()) {
+		cout << "Error opening " << bridgeFile << " ...skipping this bridge." << endl;
+		return;
+	}
+	
+	string line;
+	
+	getline(infile, line);
+	stringstream linestream(line);
+	
+	string addr;
+	string port;
+	
+	linestream >> addr >> port;
+	
+	struct addrinfo *res;
+	
+	struct addrinfo hints;
+	memset(&hints, 0, sizeof hints);
+
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
+	
+	getaddrinfo(addr.c_str(), port.c_str(), &hints, &res);
+	
+	m_fd = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+
+	if(connect(m_fd, res->ai_addr, res->ai_addrlen) < 0) {
+		perror("connect()");
+		return;
+	}
+	
+	cout << "Connected to " << addr << endl;
+	
+	// We must listen for an "accept" or "reject" string from the bridge
+	int bytesRead = 0;
+	char buf[BUFSIZE];
+	if((bytesRead = recv(m_fd, buf, sizeof buf, 0)) <= 0) {
+		cout << "recv error while listening for accept/reject" << endl;
+		return;
+	}
+
+	if(strcmp(buf, "Reject") == 0) {
+		cout << addr << " rejected our connection!" << endl;
+		close();
+		return;
+	}
+	else if (strcmp(buf, "Accept") == 0) {
+		cout << addr << " accepted our connection!" << endl;
+	}
+	//TODO:  try to connect 5 times, then give up (as per writeup)
+	else  {
+		cout << "Not sure what " << addr << " had to say about connecting to us.  Skipping it." << endl;
+		close();
+		return;
+	}
+
+}

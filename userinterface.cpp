@@ -1,9 +1,11 @@
 #include "userinterface.h"
 #include <cstring>
+#include <map>
 
+/*
 using namespace std;
 
-typedef std::map<string, printFunctions> M;
+typedef map<string, printFunctions> M;
 
 void printARP();
 void printPQ();
@@ -101,3 +103,4 @@ void printRTABLE()
 {
 
 }
+*/
