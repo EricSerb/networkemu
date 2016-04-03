@@ -2,6 +2,7 @@
 #include "parser.h"
 #include <iostream>
 #include <unistd.h>
+#include <algorithm>
 
 using namespace std;
 
@@ -23,8 +24,21 @@ Station::Station(bool routerFlag, string ifaceFile, string rtableFile, string ho
  */
 void Station::handleUserInput(char inputBuffer[BUFSIZE])
 {
+	cout << "buffer: " << inputBuffer << endl;
+	string line(inputBuffer);
 	
-	if(strncmp(inputBuffer, "Send", 4) == 0 || strncmp(inputBuffer, "send", 4) == 0)
+	// only handle lowercase input
+	transform(line.begin(), line.end(), line.begin(), ::tolower);
+	
+	stringstream linestream(line);
+	
+	string command;
+	
+	linestream >> command;
+	
+	cout << "line: " << line << endl << "command: " << command << endl;
+	
+	if(command == "send")
 	{
 		//parse pkt into a buf
 		string cmd, dstHost, data, newBuf(inputBuffer);
@@ -49,45 +63,36 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 		//if there is not MAC must send out an ARP and wait to send this message.
 	}
 
-	else if(strncmp(inputBuffer, "show", 4) == 0 || strncmp(inputBuffer, "Show", 4) == 0)
+	else if(command == "show")
 	{
-		//show whichever file it indicates in buf
-		string newBuf(inputBuffer);
-		size_t i = newBuf.find(" ", 0);
-		i++;
-		//just need to get the command out of the buf and that is it
-		string cmd = newBuf.substr(i, (newBuf.length() - i));
+		string target;
+		linestream >> target;
+		
+		cout << "target: " << target << endl;
 
-		if(cmd.compare("arp"))
+		if(target == "arp")
 		{
 			//Show all packets in ARP vector/map
 		}
-		else if(cmd.compare("pq"))
+		else if(target == "pq")
 		{
 			//Show pq
 		}
-		else if(cmd.compare("host"))
-		{
+		else if(target == "host")
 			displayHostMap();
-		}
-		else if(cmd.compare("iface"))
-		{
+		else if(target == "iface")
 			displayInterfaces();
-		}
-		else if(cmd.compare("rtable"))
-		{		
+		else if(target == "rtable")
 			displayRouteTable();
-		}
+		
 		else //Invalid show command
 		{
 			cout << "Invalid show command" << endl;
 			cout << " Valid options: arp, pq, host, iface, rtable" << endl << endl;
 		}
 	}
-	else if(strncmp(inputBuffer, "Quit", 4) == 0 || strncmp(inputBuffer, "quit", 4) == 0)
-	{
+	else if(command == "quit")
 		exit(0);
-	}
 	else //catch for invalid commands
 	{
 		cout << "Invalid command: " << inputBuffer << endl;
