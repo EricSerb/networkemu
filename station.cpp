@@ -23,7 +23,76 @@ Station::Station(bool routerFlag, string ifaceFile, string rtableFile, string ho
  */
 void Station::handleUserInput(char inputBuffer[BUFSIZE])
 {
+	
+	if(strncmp(inputBuffer, "Send", 4) == 0 || strncmp(inputBuffer, "send", 4) == 0)
+	{
+		//parse pkt into a buf
+		string cmd, dstHost, data, newBuf(inputBuffer);
 
+		std::size_t i = newBuf.find(" ", 0);
+		
+		//found lenght of command and then copy it out. should be 4 characters
+		cmd = newBuf.substr(0, i); 
+		i++;
+
+		//Now from position of i+1 should be start of host name and find end position of that
+		std::size_t k = newBuf.find(" ", i);
+
+		//copy out host name. Do k-i because that is the length we need to copy
+		dstHost = newBuf.substr(i, (k - i));
+		k++; //move k to start of data
+		
+		//get data out and now have everything extracted
+		data = newBuf.substr(k, (newBuf.length() - k));
+
+		//TODO: look up host from hosts map to get ip and then using the routing table get the MAC
+		//if there is not MAC must send out an ARP and wait to send this message.
+	}
+
+	else if(strncmp(inputBuffer, "show", 4) == 0 || strncmp(inputBuffer, "Show", 4) == 0)
+	{
+		//show whichever file it indicates in buf
+		string newBuf(inputBuffer);
+		size_t i = newBuf.find(" ", 0);
+		i++;
+		//just need to get the command out of the buf and that is it
+		string cmd = newBuf.substr(i, (newBuf.length() - i));
+
+		if(cmd.compare("arp"))
+		{
+			//Show all packets in ARP vector/map
+		}
+		else if(cmd.compare("pq"))
+		{
+			//Show pq
+		}
+		else if(cmd.compare("host"))
+		{
+			displayHostMap();
+		}
+		else if(cmd.compare("iface"))
+		{
+			displayInterfaces();
+		}
+		else if(cmd.compare("rtable"))
+		{		
+			displayRouteTable();
+		}
+		else //Invalid show command
+		{
+			cout << "Invalid show command" << endl;
+			cout << " Valid options: arp, pq, host, iface, rtable" << endl << endl;
+		}
+	}
+	else if(strncmp(inputBuffer, "Quit", 4) == 0 || strncmp(inputBuffer, "quit", 4) == 0)
+	{
+		exit(0);
+	}
+	else //catch for invalid commands
+	{
+		cout << "Invalid command: " << inputBuffer << endl;
+	}
+	cout << "Skipped every option include invalid... Major error" << endl;
 }
 
 bool Station::router()
