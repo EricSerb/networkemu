@@ -20,6 +20,8 @@ public:
 	
 	void handleUserInput(char inputBuffer[BUFSIZE]);
 	
+	void displayArpCache();
+	void displayPQ();
 	void displayInterfaces();
 	void displayRouteTable();
 	void displayHostMap();
