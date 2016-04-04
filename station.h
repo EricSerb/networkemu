@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include "ip.h"
+#include "ip_layer.h"
 
 class Station {
 public:
@@ -31,6 +32,9 @@ private:
 	std::vector<iface> m_ifaces; // All interfaces attached to the station
 	std::vector<rtable> m_rTableEntries; // Entries for the routing table
 	std::map<std::string, IPAddr> m_hostMap; // Our DNS, maps hostname => IP
+	std::vector<std::vector<unsigned char > > m_pendingQueue; // packets waiting to be sent out
+	ARPcache m_arpCache;
+	
 };
 
 #endif
