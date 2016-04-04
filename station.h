@@ -6,6 +6,12 @@
 #include <string>
 #include "ip.h"
 #include "ip_layer.h"
+#include <sys/time.h>
+
+struct CacheEntry {
+	MacAddr mac;
+	timeval timeStamp;
+};
 
 class Station {
 public:
@@ -35,7 +41,7 @@ private:
 	std::vector<rtable> m_rTableEntries; // Entries for the routing table
 	std::map<std::string, IPAddr> m_hostMap; // Our DNS, maps hostname => IP
 	std::vector<std::vector<unsigned char > > m_pendingQueue; // packets waiting to be sent out
-	ARPcache m_arpCache;
+	std::map<IPAddr, CacheEntry> m_arpCache; // map of IP address to to MAC address/time stamp
 	
 };
 

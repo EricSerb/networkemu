@@ -4,11 +4,4 @@
 #include "ip.h"
 #include <map>
 
-class ARPcache {
-public:
-	void displayTable();
-private:
-	std::map<IPAddr, MacAddr> m_ipToMacTable;
-};
-
 #endif

@@ -123,17 +123,24 @@ void Station::close()
 	m_fd = -1;
 }
 
-void displayArpCache()
+void Station::displayArpCache()
 {
-	m_arpCache.displayTable();
+	cout << "ARP CACHE" << endl;
+	cout << "IP ADDRESS\tMAC ADDRESS\tTIMESTAMP" << endl;
+	for(auto &it : m_arpCache) {
+		cout << ntop(it.first) << "\t";
+		cout << it.second.mac << "\t";
+		cout << it.second.timeStamp.tv_sec;
+		cout << endl;
+	}
 }
 
 void Station::displayPQ()
 {
 	cout << "PENDING QUEUE CONTENTS" << endl;
-	for(int i = 0; i < m_pendingQueue.size(); i++)
+	for(unsigned int i = 0; i < m_pendingQueue.size(); i++)
 	{
-		for(int j = 0; j < m_pendingQueue[i].size(); j++)
+		for(unsigned int j = 0; j < m_pendingQueue[i].size(); j++)
 		{
 			cout << m_pendingQueue[i][j] << endl;	
 		}
