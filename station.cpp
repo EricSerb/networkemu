@@ -71,13 +71,9 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 		cout << "target: " << target << endl;
 
 		if(target == "arp")
-		{
-			//Show all packets in ARP vector/map
-		}
+			displayArpCache();
 		else if(target == "pq")
-		{
-			//Show pq
-		}
+			displayPQ();
 		else if(target == "host")
 			displayHostMap();
 		else if(target == "iface")
@@ -97,7 +93,7 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 	{
 		cout << "Invalid command: " << inputBuffer << endl;
 	}
-	cout << "Skipped every option include invalid... Major error" << endl;
+	//cout << "Skipped every option include invalid... Major error" << endl;
 }
 
 bool Station::router()
@@ -125,6 +121,24 @@ void Station::close()
 	if(!closed())
 		::close(m_fd);
 	m_fd = -1;
+}
+
+void displayArpCache()
+{
+	m_arpCache.displayTable();
+}
+
+void Station::displayPQ()
+{
+	cout << "PENDING QUEUE CONTENTS" << endl;
+	for(int i = 0; i < m_pendingQueue.size(); i++)
+	{
+		for(int j = 0; j < m_pendingQueue[i].size(); j++)
+		{
+			cout << m_pendingQueue[i][j] << endl;	
+		}
+	}
+	cout << endl;
 }
 
 
