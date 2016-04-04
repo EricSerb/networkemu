@@ -2,7 +2,7 @@
 
 #include "parser.h"
 #include <unistd.h>
-#include "maclayer.h"
+#include "mac_layer.h"
 #include "userinterface.h"
 #include "station.h"
 
