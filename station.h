@@ -26,6 +26,8 @@ public:
 	
 	void handleUserInput(char inputBuffer[BUFSIZE]);
 	
+	void constructArpRequest(IP_PKT ipPkt);
+	
 	void displayArpCache();
 	void displayPQ();
 	void displayInterfaces();
@@ -40,7 +42,8 @@ private:
 	std::vector<iface> m_ifaces; // All interfaces attached to the station
 	std::vector<rtable> m_rTableEntries; // Entries for the routing table
 	std::map<std::string, IPAddr> m_hostMap; // Our DNS, maps hostname => IP
-	std::vector<std::vector<unsigned char > > m_pendingQueue; // packets waiting to be sent out
+	std::vector<std::vector<unsigned char > > m_pendingQueue; // packets waiting to be sent out with KNOWN dest mac
+	std::vector<EtherPkt> m_arpWaitQueue; // packets that can't be sent out until we know dest mac
 	std::map<IPAddr, CacheEntry> m_arpCache; // map of IP address to to MAC address/time stamp
 	
 };

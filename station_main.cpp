@@ -76,6 +76,8 @@ int main (int argc, char *argv[])
 		char buf[BUFSIZE/2];
 		memset(buf, '\0', sizeof buf);
 		
+		// TODO: cycle through pending queue and send out all possible packets
+		
 		for(int i = 0; i <= maxFd; ++i) {
 			if (FD_ISSET(i, &readSet)) {
 				if(i == station.socket()) {

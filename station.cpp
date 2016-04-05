@@ -96,6 +96,26 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 	//cout << "Skipped every option include invalid... Major error" << endl;
 }
 
+/**
+ * Construct the request for the MAC address of our EtherPkt's destination
+ * and add it to the queue of packets waiting to be sent out
+ */
+void Station::constructArpRequest(IP_PKT ipPkt)
+{
+	// We know everything except for the destination MAC address
+	ARP_PKT arpPkt;
+	
+	arpPkt.op = 0;
+	//arpPkt.srcip = getIp();
+	arpPkt.dstip = ipPkt.dstip;
+	//arpPkt.srcmac = getMac();
+
+	// Add the arp packet to the pending packet queue
+	
+	
+}
+
+
 bool Station::router()
 {
 	return m_router;
