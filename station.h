@@ -30,6 +30,7 @@ public:
 	std::string mac();
 	
 	void handleUserInput(char inputBuffer[BUFSIZE]);
+	void handlePacket(char inputBuffer[BUFSIZE]);
 	
 	void constructArpRequest(IP_PKT ipPkt);
 	void constructArpReply(char *buffer);

@@ -43,5 +43,13 @@ std::vector<unsigned char> writeArpPktToBytes(ARP_PKT pkt)
 	return bytes;
 }
 
+ARP_PKT writeBytesToArpPkt(char* buffer)
+{
+	ARP_PKT pkt;
+	
+	return pkt;
+}
+
+
 
 	

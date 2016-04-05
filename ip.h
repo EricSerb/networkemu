@@ -5,7 +5,7 @@
 
 /* ARP packet types */
 #define ARP_REQUEST 0
-#define ARP_RESPONSE 1
+#define ARP_REPLY 1
 
 /* IP protocol types */
 #define PROT_TYPE_UDP 0

@@ -21,11 +21,56 @@ Station::Station(bool routerFlag, string ifaceFile, string rtableFile, string ho
 }
 
 /**
+ * When a packet has arrived, we need to determine if it is an ARP or IP.
+ * Depending on what kind of packet it is, we need to either:
+ * 	display the message (in case we've received an IP packet meant for us)
+ * 	generate an ARP reply (in case we've received an ARP request that we can satisfy)
+ * 	discard the packet (in case the packet is not for us or we cannot satisfy the ARP request)
+ * 
+ * TODO: if we're a router, consult the routing table to figure out where the packet should go,
+ * 	then set it up to be forwarded properly and add it to the pending queue
+ */
+void Station::handlePacket(char inputBuffer[BUFSIZE])
+{
+	// The packet will come to us as an EtherPkt.  Determine if the EtherPkt is wrapping
+	// an IP packet or ARP pkt
+	EtherPkt etherPkt;
+	
+	memcpy(&etherPkt.dst, &inputBuffer[0], 18);
+	memcpy(&etherPkt.src, &inputBuffer[18], 18);
+	memcpy(&etherPkt.type, &inputBuffer[36], 2);
+	memcpy(&etherPkt.size, &inputBuffer[38], 2);
+	memcpy(&etherPkt.data, &inputBuffer[40], BUFSIZE/2);
+	
+	// If we have received an ARP Packet, we need to know if it is a request or a reply
+	if(etherPkt.type == TYPE_ARP_PKT) {
+		ARP_PKT arpPkt = writeBytesToArpPkt(etherPkt.data);
+		
+		if(arpPkt.op = ARP_REQUEST)
+			constructArpReply(arpPkt);
+		// We've received a reply, which means that we can map the dest IP to a dest MAC
+		else if(arpPkt.op = ARP_REPLY) {
+			insertArpCache(arpPkt.dstip, arpPkt.dstmac);
+			// TODO: how will we handle moving the packets that did not have a dest MAC to
+			// the pending queue?
+		}
+		else {
+			cout << "ARP OP UNKNOWN.  Bad error, exiting before things break even more." << endl;
+			exit(1);
+		}	
+	}
+	else if(etherPkt.type == TYPE_IP_PKT) {
+		// TODO: if we are not a router, display the data buffer.  If we are a router, forward the packet
+	}
+}
+
+
+/**
  * Parse through commands typed by the user and perform the appropriate I/O
  */
 void Station::handleUserInput(char inputBuffer[BUFSIZE])
 {
-	cout << "buffer: " << inputBuffer << endl;
+	cout << "user input buffer: " << inputBuffer << endl;
 	string line(inputBuffer);
 	
 	// only handle lowercase input

@@ -72,14 +72,14 @@ int main (int argc, char *argv[])
 		fd_set readSet = masterSet;
 		select(maxFd+1, &readSet, NULL, NULL, NULL);
 		
-		int bytesRead = 0;
-		char buf[BUFSIZE/2];
-		memset(buf, '\0', sizeof buf);
-		
 		// TODO: cycle through pending queue and send out all possible packets
 		station.sendPendingPackets();
 		
 		for(int i = 0; i <= maxFd; ++i) {
+			int bytesRead = 0;
+			char buf[BUFSIZE/2];
+			memset(buf, '\0', sizeof buf);
+			
 			if (FD_ISSET(i, &readSet)) {
 				if(i == station.socket()) {
 					// If no bytes are read, something is wrong.  Exit.
@@ -87,8 +87,10 @@ int main (int argc, char *argv[])
 						cout << "recv error in select() loop" << endl;
 						return 1;
 					}
-					buf[bytesRead + 1] = '\0';
-					cout << ">>> " << buf;
+					//buf[bytesRead + 1] = '\0';
+					//cout << ">>> " << buf;
+					
+					station.handlePacket(buf);
 				}
 				
 				else if(i == fileno(stdin)) {
