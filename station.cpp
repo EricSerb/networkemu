@@ -3,7 +3,6 @@
 #include <iostream>
 #include <unistd.h>
 #include <algorithm>
-#include <mac_layer.h>
 
 using namespace std;
 
