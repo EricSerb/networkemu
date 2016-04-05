@@ -24,6 +24,8 @@ public:
 	void close();
 	bool closed();
 	
+	void sendPendingPackets();
+	
 	IPAddr ip();
 	std::string mac();
 	

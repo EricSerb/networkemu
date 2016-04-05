@@ -97,6 +97,15 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 }
 
 /**
+ * Iterate through the pending packet queue and send everything out
+ */
+void Station::sendPendingPackets()
+{
+
+}
+
+
+/**
  * Construct the request for the MAC address of our EtherPkt's destination
  * and add it to the queue of packets waiting to be sent out
  * TODO: support multiple NICs for m_ifaces ipaddr/macaddr
