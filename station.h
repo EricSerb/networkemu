@@ -24,6 +24,9 @@ public:
 	void close();
 	bool closed();
 	
+	IPAddr ip();
+	std::string mac();
+	
 	void handleUserInput(char inputBuffer[BUFSIZE]);
 	
 	void constructArpRequest(IP_PKT ipPkt);

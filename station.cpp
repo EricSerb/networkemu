@@ -99,6 +99,7 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 /**
  * Construct the request for the MAC address of our EtherPkt's destination
  * and add it to the queue of packets waiting to be sent out
+ * TODO: support multiple NICs for m_ifaces ipaddr/macaddr
  */
 void Station::constructArpRequest(IP_PKT ipPkt)
 {
@@ -106,13 +107,14 @@ void Station::constructArpRequest(IP_PKT ipPkt)
 	ARP_PKT arpPkt;
 	
 	arpPkt.op = 0;
-	//arpPkt.srcip = getIp();
+	arpPkt.srcip = ip();
 	arpPkt.dstip = ipPkt.dstip;
-	//arpPkt.srcmac = getMac();
+	strcpy(arpPkt.srcmac, mac().c_str());
+	cout << "mac(): " << mac() << endl;
 
 	// Add the arp packet to the pending packet queue
-	
-	
+	vector<unsigned char> arpBytes = writeArpPktToBytes(arpPkt);
+	m_pendingQueue.push_back(arpBytes);
 }
 
 
@@ -142,6 +144,24 @@ void Station::close()
 		::close(m_fd);
 	m_fd = -1;
 }
+
+/**
+ * Get our IP address.  TODO:  support multiple NICs
+ */
+IPAddr Station::ip()
+{
+	return m_ifaces[0].ipaddr;
+}
+
+/**
+ * Get our MAC address.  TODO:  support multiple NICs
+ */
+string Station::mac()
+{
+	return m_ifaces[0].macaddr;
+}
+
+
 
 void Station::displayArpCache()
 {
