@@ -3,6 +3,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <algorithm>
+#include "mac_layer.h"
 
 using namespace std;
 
@@ -107,11 +108,28 @@ void Station::sendPendingPackets()
 
 /**
  * Construct the request for the MAC address of our EtherPkt's destination
- * and add it to the queue of packets waiting to be sent out
+ * and add it to the queue of packets waiting to be sent out.  Remember that
+ * packets are sent out on the Mac layer, therefore we need to add the bytes of an
+ * EtherPkt to our pending packet queue (NOT THE BYTES OF AN ARP PKT).  The arp pkt is wrapped
+ * inside of an EtherPkt
+ * 
  * TODO: support multiple NICs for m_ifaces ipaddr/macaddr
+ * TODO: do we NEED to send in an IP_PKT?  If we can't construct an IP_PKT because we don't know the dest MAC,
+ * 	then maybe we should only be passing in the dest IP address for now (in fact, that is the only field we use
+ * 	from IP_PKT)
  */
 void Station::constructArpRequest(IP_PKT ipPkt)
 {
+	EtherPkt etherPkt;
+	for(unsigned int i = 0; i < sizeof(MacAddr); ++i)
+		etherPkt.dst[i] = 0;
+	// Mac address is a char[18], where first 17 chars are the mac address and
+	// final char is termination
+	etherPkt.dst[17] = '\0';
+	
+	strcpy(etherPkt.src, mac().c_str());
+	etherPkt.type = TYPE_ARP_PKT;
+	
 	// We know everything except for the destination MAC address
 	ARP_PKT arpPkt;
 	
@@ -121,9 +139,16 @@ void Station::constructArpRequest(IP_PKT ipPkt)
 	strcpy(arpPkt.srcmac, mac().c_str());
 	cout << "mac(): " << mac() << endl;
 
-	// Add the arp packet to the pending packet queue
+	// The ARP packet will be contained in the EtherPkt's data buffer
 	vector<unsigned char> arpBytes = writeArpPktToBytes(arpPkt);
-	m_pendingQueue.push_back(arpBytes);
+	
+	etherPkt.size = arpBytes.size();
+	memcpy(&etherPkt.data, &arpBytes[0], arpBytes.size());
+	
+	// Need EtherPkt bytes for pendingQueue
+	vector<unsigned char> ethBytes = writeEthernetPacketToBytes(etherPkt);
+	
+	m_pendingQueue.push_back(ethBytes);
 }
 
 
