@@ -102,7 +102,14 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
  */
 void Station::sendPendingPackets()
 {
-
+	for(unsigned int i = 0; i < m_pendingQueue.size(); ++i) {
+		char buf[BUFSIZE];
+		memcpy(&buf, &m_pendingQueue[i][0], m_pendingQueue[i].size());
+		if(send(i, buf, sizeof(buf), 0) == -1) {
+			cout << "Could not send m_pendingQueue[" << i << "]: " << &m_pendingQueue[i] << endl;
+			cout << "buf: " << buf << endl;
+		}
+}
 }
 
 
