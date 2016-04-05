@@ -32,6 +32,7 @@ public:
 	void handleUserInput(char inputBuffer[BUFSIZE]);
 	
 	void constructArpRequest(IP_PKT ipPkt);
+	void constructArpReply(char *buffer);
 	
 	void displayArpCache();
 	void displayPQ();

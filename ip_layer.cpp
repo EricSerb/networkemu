@@ -43,20 +43,5 @@ std::vector<unsigned char> writeArpPktToBytes(ARP_PKT pkt)
 	return bytes;
 }
 
-ARP_PKT writeBytesToArpPkt(char *buffer, IPAddr ip, MacAddr mac)
-{
-	ARP_PKT pkt;
 
-	pkt.op = 1;
-
-	pkt.srcip = ip;
-
-	strcpy(pkt.srcmac, mac);
 	
-	memcpy(&(pkt.dstip), &(buffer[2]), 4);
-
-	memcpy(&(pkt.dstmac), &(buffer[6]), 18);
-
-	return pkt;
-
-}

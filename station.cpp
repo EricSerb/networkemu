@@ -3,6 +3,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <algorithm>
+#include <mac_layer.h>
 
 using namespace std;
 
@@ -124,6 +125,37 @@ void Station::constructArpRequest(IP_PKT ipPkt)
 	// Add the arp packet to the pending packet queue
 	vector<unsigned char> arpBytes = writeArpPktToBytes(arpPkt);
 	m_pendingQueue.push_back(arpBytes);
+}
+
+void Station::constructArpReply(char *buffer)
+{
+
+	ARP_PKT pkt;
+
+	pkt.op = 1;
+
+	pkt.srcip = ip();
+
+	strcpy(pkt.srcmac, mac().c_str());
+	
+	memcpy(&(pkt.dstip), &(buffer[2]), 4);
+
+	memcpy(&(pkt.dstmac), &(buffer[6]), 18);
+
+	EtherPkt ePkt;
+
+	strcpy(ePkt.dst, pkt.dstmac);
+	strcpy(ePkt.src, pkt.srcmac);
+	
+	ePkt.type = 0;
+
+	vector<unsigned char> arpPkt = writeArpPktToBytes(pkt);
+
+	ePkt.size = arpPkt.size();
+	memcpy(&(ePkt.data), &(arpPkt), ePkt.size);
+
+	vector<unsigned char> ethBytes = writeEthernetPacketToBytes(ePkt);
+	m_pendingQueue.push_back(ethBytes);
 }
 
 
