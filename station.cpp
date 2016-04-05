@@ -286,3 +286,29 @@ void Station::connectToBridge()
 	}
 
 }
+
+void Station::insertArpCache(IPAddr ip, MacAddr mac)
+{
+	CacheEntry entry;
+	gettimeofday(&(entry.timeStamp), NULL);
+	strcpy(entry.mac, mac);
+
+	m_arpCache.insert(pair<IPAddr, CacheEntry>(ip, entry)); 
+}
+
+CacheEntry Station::lookupArpCache(IPAddr ip)
+{
+	auto it = m_arpCache.find(ip);
+	
+	//if this is true then ip address is not in the table
+	if(it == m_arpCache.end())
+	{
+		CacheEntry empty;
+		strcpy(empty.mac, "");
+		empty.timeStamp.tv_sec = 0;
+		return empty;
+	}
+
+	gettimeofday(&(it->second.timeStamp), NULL);
+	return it->second;
+}
