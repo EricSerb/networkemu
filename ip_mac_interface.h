@@ -9,8 +9,9 @@
 std::vector<unsigned char> writeEthernetPacketToBytes(EtherPkt pkt);
 
 // NETWORK LAYER
-std::vector<unsigned char> writeIpPktToBytes(IP_PKT pkt);
 std::vector<unsigned char> writeArpPktToBytes(ARP_PKT pkt);
+EtherPkt writeBytesToEtherPacket(char *buffer);
 ARP_PKT writeBytesToArpPkt(char *buffer);
 IP_PKT writeBytesToIpPkt(char *buffer);
+
 #endif

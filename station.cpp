@@ -33,13 +33,7 @@ void Station::handlePacket(char inputBuffer[BUFSIZE])
 {
 	// The packet will come to us as an EtherPkt.  Determine if the EtherPkt is wrapping
 	// an IP packet or ARP pkt
-	EtherPkt etherPkt;
-	
-	memcpy(&etherPkt.dst, &inputBuffer[0], 18);
-	memcpy(&etherPkt.src, &inputBuffer[18], 18);
-	memcpy(&etherPkt.type, &inputBuffer[36], 2);
-	memcpy(&etherPkt.size, &inputBuffer[38], 2);
-	memcpy(&etherPkt.data, &inputBuffer[40], BUFSIZE/2);
+	EtherPkt etherPkt = writeBytesToEtherPacket(inputBuffer);
 	
 	// If we have received an ARP Packet, we need to know if it is a request or a reply
 	if(etherPkt.type == TYPE_ARP_PKT) {
@@ -59,15 +53,7 @@ void Station::handlePacket(char inputBuffer[BUFSIZE])
 		}	
 	}
 	else if(etherPkt.type == TYPE_IP_PKT) {
-		IP_PKT ipPkt = writeBytesToIpPkt(etherPkt.data);
-		
-		// If we are not a router, display the data buffer.
-		// If we are a router, forward the packet
-		if(!router())
-			cout << ipPkt.data << endl;
-		else {
-			// TODO: consult routing table
-		}
+		// TODO: if we are not a router, display the data buffer.  If we are a router, forward the packet
 	}
 }
 
