@@ -45,10 +45,10 @@ void Station::handlePacket(char inputBuffer[BUFSIZE])
 	if(etherPkt.type == TYPE_ARP_PKT) {
 		ARP_PKT arpPkt = writeBytesToArpPkt(etherPkt.data);
 		
-		if(arpPkt.op = ARP_REQUEST)
+		if(arpPkt.op == ARP_REQUEST)
 			constructArpReply(arpPkt);
 		// We've received a reply, which means that we can map the dest IP to a dest MAC
-		else if(arpPkt.op = ARP_REPLY) {
+		else if(arpPkt.op == ARP_REPLY) {
 			insertArpCache(arpPkt.dstip, arpPkt.dstmac);
 			// TODO: how will we handle moving the packets that did not have a dest MAC to
 			// the pending queue?
