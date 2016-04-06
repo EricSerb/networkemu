@@ -50,6 +50,7 @@ std::vector< unsigned char > writeEthernetPacketToBytes(EtherPkt pkt)
 	return bytes;
 }
 
+<<<<<<< HEAD
 /**
  * Writes the bytes of an IP packet into a byte vector.  This is intended
  * to be used so that IP packets can be encapsulated in the data buffer of
@@ -80,6 +81,18 @@ std::vector< unsigned char > writeIpPktToBytes(IP_PKT pkt)
 	}
 	
 	return bytes;
+}
+
+EtherPkt writeBytesToEtherPacket(char *buffer)
+{
+	EtherPkt etherPkt;
+	memcpy(&etherPkt.dst, &buffer[0], 18);
+	memcpy(&etherPkt.src, &buffer[18], 18);
+	memcpy(&etherPkt.type, &buffer[36], 2);
+	memcpy(&etherPkt.size, &buffer[38], 2);
+	memcpy(&etherPkt.data, &buffer[40], BUFSIZE/2);
+	
+	return etherPkt;
 }
 
 
