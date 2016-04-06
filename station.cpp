@@ -73,14 +73,13 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 	cout << "user input buffer: " << inputBuffer << endl;
 	string line(inputBuffer);
 	
-	// only handle lowercase input
-	transform(line.begin(), line.end(), line.begin(), ::tolower);
-	
 	stringstream linestream(line);
+
 	
+	// only handle lowercase commands
 	string command;
-	
 	linestream >> command;
+	transform(command.begin(), command.end(), command.begin(), ::tolower);
 	
 	cout << "line: " << line << endl << "command: " << command << endl;
 	
@@ -95,6 +94,7 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 		cmd = newBuf.substr(0, i); 
 		i++;
 
+		cout << "cmd: " << cmd << endl;
 		//Now from position of i+1 should be start of host name and find end position of that
 		std::size_t k = newBuf.find(" ", i);
 
@@ -104,6 +104,8 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 		
 		//get data out and now have everything extracted
 		data = newBuf.substr(k, (newBuf.length() - k));
+		
+		cout << "dstHost: " << dstHost << endl << "data: " << data << endl;
 
 		//TODO: look up host from hosts map to get ip and then using the routing table get the MAC
 		//if there is not MAC must send out an ARP and wait to send this message.
