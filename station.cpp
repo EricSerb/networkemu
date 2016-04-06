@@ -53,7 +53,14 @@ void Station::handlePacket(char inputBuffer[BUFSIZE])
 		}	
 	}
 	else if(etherPkt.type == TYPE_IP_PKT) {
-		// TODO: if we are not a router, display the data buffer.  If we are a router, forward the packet
+		IP_PKT pkt = writeBytesToIpPkt(etherPkt.data);
+		// If we are not a router, display the data buffer.  
+		// If we are a router, forward the packet
+		if(!router())
+			cout << pkt.data << endl;
+		else {
+			// TODO: consult routing table and forward
+		}
 	}
 }
 

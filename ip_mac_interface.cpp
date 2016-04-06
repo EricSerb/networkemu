@@ -50,7 +50,6 @@ std::vector< unsigned char > writeEthernetPacketToBytes(EtherPkt pkt)
 	return bytes;
 }
 
-<<<<<<< HEAD
 /**
  * Writes the bytes of an IP packet into a byte vector.  This is intended
  * to be used so that IP packets can be encapsulated in the data buffer of
