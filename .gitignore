@@ -5,3 +5,8 @@ station.o
 string_utils.o
 parser.o
 maclayer.o
+cs1.info
+demo/
+ip_mac_interface.o
+station_main.o
+
