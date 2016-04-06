@@ -95,6 +95,19 @@ ARP_PKT writeBytesToArpPkt(char* buffer)
 {
 	ARP_PKT pkt;
 	
+	// get the op out
+	memcpy(&(pkt.op), &(buffer[0]), 2);
+	
+	//get the src ip
+	memcpy(&(pkt.srcip), &(buffer[2]), 4);
+	
+	//get src mac
+	memcpy(&(pkt.srcmac), &(buffer[6]), 18);
+	
+	memcpy(&(pkt.dstip), &(buffer[24]), 4);
+	
+	memcpy(&(pkt.dstmac), &(buffer[28]), 18);
+	
 	return pkt;
 }
 
