@@ -50,6 +50,26 @@ std::vector< unsigned char > writeEthernetPacketToBytes(EtherPkt pkt)
 	return bytes;
 }
 
+/**
+ * Writes the bytes of an IP packet into a byte vector.  This is intended
+ * to be used so that IP packets can be encapsulated in the data buffer of
+ * an ethernet packet.
+ */
+std::vector< unsigned char > writeIpPktToBytes(IP_PKT pkt)
+{
+	vector<unsigned char> bytes;
+	
+	/*
+	 * IPAddr  dstip;
+	IPAddr  srcip;
+	short   length;
+	char    data[BUFSIZE/2]; */
+	
+	string dst = to_string((int)pkt.dstip);
+	
+	return bytes;
+}
+
 
 /**
  * Converts an ARP PKT to a byte vector, so that it can easily

@@ -88,8 +88,6 @@ typedef struct ip_pkt
 {
 	IPAddr  dstip;
 	IPAddr  srcip;
-	short   protocol;
-	unsigned long    sequenceno;
 	short   length;
 	char    data[BUFSIZE/2];
 }__attribute__(( packed )) IP_PKT;

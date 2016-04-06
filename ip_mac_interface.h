@@ -12,4 +12,5 @@ std::vector<unsigned char> writeEthernetPacketToBytes(EtherPkt pkt);
 std::vector<unsigned char> writeArpPktToBytes(ARP_PKT pkt);
 ARP_PKT writeBytesToArpPkt(char *buffer);
 
+std::vector<unsigned char> writeIpPktToBytes(IP_PKT pkt);
 #endif
