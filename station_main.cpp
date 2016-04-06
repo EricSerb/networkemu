@@ -2,7 +2,7 @@
 
 #include "parser.h"
 #include <unistd.h>
-#include "mac_layer.h"
+#include "ip_mac_interface.h"
 #include "userinterface.h"
 #include "station.h"
 
@@ -72,7 +72,6 @@ int main (int argc, char *argv[])
 		fd_set readSet = masterSet;
 		select(maxFd+1, &readSet, NULL, NULL, NULL);
 		
-		// TODO: cycle through pending queue and send out all possible packets
 		station.sendPendingPackets();
 		
 		for(int i = 0; i <= maxFd; ++i) {

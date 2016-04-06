@@ -5,7 +5,7 @@
 #include <map>
 #include <string>
 #include "ip.h"
-#include "ip_layer.h"
+#include "ip_mac_interface.h"
 #include <sys/time.h>
 
 struct CacheEntry {
