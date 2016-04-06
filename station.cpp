@@ -202,20 +202,20 @@ void Station::constructArpRequest(IP_PKT ipPkt)
 	m_pendingQueue.push_back(ethBytes);
 }
 
-void Station::constructArpReply(char *buffer)
+void Station::constructArpReply(ARP_PKT general)
 {
 
 	ARP_PKT pkt;
 
 	pkt.op = 1;
 
-	pkt.srcip = ip();
+	pkt.srcip = general.dstip;
 
 	strcpy(pkt.srcmac, mac().c_str());
 	
-	memcpy(&(pkt.dstip), &(buffer[2]), 4);
+	pkt.dstip = general.srcip;
 
-	memcpy(&(pkt.dstmac), &(buffer[6]), 18);
+	strcpy(pkt.dstmac, general.srcmac);
 
 	EtherPkt ePkt;
 
