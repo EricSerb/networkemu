@@ -10,6 +10,6 @@ std::vector<unsigned char> writeEthernetPacketToBytes(EtherPkt pkt);
 
 // NETWORK LAYER
 std::vector<unsigned char> writeArpPktToBytes(ARP_PKT pkt);
-ARP_PKT writeBytesToArpPkt(char *buffer, IPAddr ip, MacAddr mac);
+ARP_PKT writeBytesToArpPkt(char *buffer);
 
 #endif
