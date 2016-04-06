@@ -161,7 +161,7 @@ void Station::sendPendingPackets()
 			cout << "Could not send m_pendingQueue[" << i << "]: " << &m_pendingQueue[i] << endl;
 			cout << "buf: " << buf << endl;
 		}
-}
+	}
 }
 
 
