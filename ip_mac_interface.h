@@ -7,11 +7,12 @@
 
 // DATA LINK LAYER
 std::vector<unsigned char> writeEthernetPacketToBytes(EtherPkt pkt);
+EtherPkt writeBytesToEtherPacket(char *buffer);
 
 // NETWORK LAYER
 std::vector<unsigned char> writeArpPktToBytes(ARP_PKT pkt);
-EtherPkt writeBytesToEtherPacket(char *buffer);
 ARP_PKT writeBytesToArpPkt(char *buffer);
 IP_PKT writeBytesToIpPkt(char *buffer);
+std::vector< unsigned char > writeIpPktToBytes(IP_PKT pkt);
 
 #endif
