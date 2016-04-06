@@ -111,6 +111,22 @@ ARP_PKT writeBytesToArpPkt(char* buffer)
 	return pkt;
 }
 
+IP_PKT writeBytesToIpPkt(char *buffer)
+{
+	IP_PKT pkt;
+	
+	//memcpy areas of buffer to form the ip packet that was just sent to us
+	memcpy(&(pkt.dstip), &(buffer[0]), 4);
+	
+	memcpy(&(pkt.srcip), &(buffer[4]), 4);
+	
+	memcpy(&(pkt.length), &(buffer[14]), 2);
+	
+	memcpy((pkt.data), &(buffer[16]), pkt.length);
+	
+	return pkt;
+}
+
 
 
 	
