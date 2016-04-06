@@ -53,19 +53,31 @@ std::vector< unsigned char > writeEthernetPacketToBytes(EtherPkt pkt)
 /**
  * Writes the bytes of an IP packet into a byte vector.  This is intended
  * to be used so that IP packets can be encapsulated in the data buffer of
- * an ethernet packet.
+ * an ethernet packet.  Order matters.  Consult ip.h for structure setup.
  */
 std::vector< unsigned char > writeIpPktToBytes(IP_PKT pkt)
 {
 	vector<unsigned char> bytes;
 	
-	/*
-	 * IPAddr  dstip;
-	IPAddr  srcip;
-	short   length;
-	char    data[BUFSIZE/2]; */
-	
 	string dst = to_string((int)pkt.dstip);
+	for(unsigned int i = 0; i < dst.length(); ++i)
+		bytes.push_back(dst[i]);
+	
+	string src = to_string((int)pkt.srcip);
+	for(unsigned int i = 0; i < src.length(); ++i)
+		bytes.push_back(src[i]);
+	
+	string len = to_string((int)pkt.length);
+	for(unsigned int i = 0; i < len.length(); ++i)
+		bytes.push_back(len[i]);
+	
+	// Add the data (which is any valid string that is terminated by \0)
+	for(unsigned int i = 0; i < sizeof(pkt.data); ++i) {
+		if(pkt.data[i] == '\0')
+			break;
+		
+		bytes.push_back(pkt.data[i]);
+	}
 	
 	return bytes;
 }
