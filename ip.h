@@ -106,7 +106,7 @@ typedef struct packet_queue
 	char buf[BUFSIZE];
 	int socketIn;
 	int socketOut;
-	short type;
+	short arpType;
 	bool known = false;
 } PacketQ;
 

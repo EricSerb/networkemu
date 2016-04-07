@@ -206,7 +206,7 @@ int main (int argc, char *argv[])
 			/* Send out packets here
 			 * If next hop is not known then broadcast using for loop code
 			 */
-			if(!toSend.known || toSend.type == TYPE_ARP_PKT)
+			if(!toSend.known || toSend.arpType == ARP_REQUEST)
 			{
 				//This is the code for sending out to all ports except the one received on
 				for(int i = 0; i <= fdmax; i++)
@@ -345,8 +345,23 @@ int main (int argc, char *argv[])
 
 						pkt.socketIn = i;
 						string type;
-						type.assign(buffer, 37, 2);
-						pkt.type = atoi(type.c_str());
+						type.clear();
+						//this gets the packet type
+						type.assign(buffer, 36, 2);
+						pkt.packetType = atoi(type.c_str());
+						type.clear();
+						
+						//Now we will get the arp type if packet type is arp
+						if(pkt.packetType == TYPE_ARP_PKT)
+						{
+							//Will set arpType to request or reply
+							type.assign(buffer, ETHPKTHEADER, 2);
+							pkt.arpType = atoi(type.c_str());
+						}
+						else
+							pkt.arpType = -1; //no arp type since it is an ip packet
+						
+						
 						//If the MacAddr is not in the self-learn table, then add it
 						if(selfLearnTable.find(src) == selfLearnTable.end())
 						{
