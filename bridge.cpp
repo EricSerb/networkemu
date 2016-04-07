@@ -206,7 +206,7 @@ int main (int argc, char *argv[])
 			/* Send out packets here
 			 * If next hop is not known then broadcast using for loop code
 			 */
-			if(!toSend.known)
+			if(!toSend.known || toSend.type == TYPE_ARP_PKT)
 			{
 				//This is the code for sending out to all ports except the one received on
 				for(int i = 0; i <= fdmax; i++)
@@ -344,6 +344,9 @@ int main (int argc, char *argv[])
 						//getpeername(i,  (sockaddr*) &peerAddr, &peerAddrLen);
 
 						pkt.socketIn = i;
+						string type;
+						type.assign(buffer, 37, 2);
+						pkt.type = atoi(type.c_str());
 						//If the MacAddr is not in the self-learn table, then add it
 						if(selfLearnTable.find(src) == selfLearnTable.end())
 						{
