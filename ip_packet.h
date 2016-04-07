@@ -12,7 +12,7 @@ public:
 	IPAddr  dstip;
 	IPAddr  srcip;
 	short   length;
-	char    data[BUFSIZE-(ETHPKTHEADER+IPPKTHEADER)];
+	char    data[IPBUFSIZE];
 };
 
 #endif

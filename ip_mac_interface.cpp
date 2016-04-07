@@ -95,25 +95,25 @@ EtherPkt writeBytesToEtherPacket(char *buffer)
 	memcpy(&etherPkt.size, &buffer[38], 2);
 	memcpy(etherPkt.data, &buffer[40], BUFSIZE-ETHPKTHEADER); */
 	
-	int i = 0, int j = 0;
+	int currentByte = 0;
+	for(unsigned int i = 0; i < sizeof(MacAddr); ++i)
+		etherPkt.dst[i] = buffer[currentByte++];
 	
-	for(j = 0; (unsigned int)j < sizeof(MacAddr); i++, j++)
-		etherPkt.dst[j] = buffer[i];
-	j = 0;
-	for(j = 0; (unsigned int)j < (sizeof(MacAddr)); i++, j++)
-		etherPkt.src[j] = buffer[i];
-	j = 0;
+	for(unsigned int i = 0; i < sizeof(MacAddr); ++i)
+		etherPkt.src[i] = buffer[currentByte++];
 	
 	char type[2], size[2];
-	for(j = 0; j < 2; i++, j++)
-		type[j] = buffer[i]
-	for(j = 0; j < 2; i++, j++)
-		size[j] = buffer[i];
-	pkt.type = atoi(type);
-	pkt.size = atoi(size);
+	for(unsigned int i = 0; i < sizeof(short); ++i)
+		type[i] = buffer[currentByte++];
 	
-	for(j = 0; j < ((BUFSIZE-ETHPKTHEADER)); i++, j++)
-		etherPkt.data[j] = buffer[i];
+	for(unsigned int i = 0; i < sizeof(short); ++i)
+		size[i] = buffer[currentByte++];
+	
+	etherPkt.type = atoi(type);
+	etherPkt.size = atoi(size);
+	
+	for(int i = 0; i < ETHERBUFSIZE; ++i)
+		etherPkt.data[i] = buffer[currentByte++];
 	
 	return etherPkt;
 }
