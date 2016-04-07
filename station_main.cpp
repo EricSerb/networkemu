@@ -70,10 +70,11 @@ int main (int argc, char *argv[])
 	
 	while(true) {
 		fd_set readSet = masterSet;
-		select(maxFd+1, &readSet, NULL, NULL, NULL);
-		
+		timeval timeout;
+		timeout.tv_sec = 0;
+		select(maxFd+1, &readSet, NULL, NULL, &timeout);
+
 		station.sendPendingPackets();
-		
 		for(int i = 0; i <= maxFd; ++i) {
 			int bytesRead = 0;
 			char buf[BUFSIZE/2];
@@ -94,7 +95,7 @@ int main (int argc, char *argv[])
 				
 				else if(!station.router() && i == fileno(stdin)) {
 					bytesRead = read(i, buf, sizeof buf);
-					
+
 					if(bytesRead > 0) {
 						// Need to make sure to terminate this for proper copying
 						buf[bytesRead + 1] = '\0';
