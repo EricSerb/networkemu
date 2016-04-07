@@ -5,6 +5,24 @@
 #include <algorithm>
 
 using namespace std;
+void dumpIpPkt(IP_PKT pkt)
+{
+	cout << "IP PACKET DUMP" << endl;
+	cout << "dstip: " << pkt.dstip << endl;
+	cout << "srcip: " << pkt.srcip << endl;
+	cout << "length: " << pkt.length << endl;
+	cout << "data: " << pkt.data << endl;
+}
+
+void dumpArpPkt(ARP_PKT pkt)
+{
+	cout << "ARP PACKET DUMP" << endl;
+	cout << "op: " << pkt.op << endl;
+	cout << "srcip: " << pkt.srcip << endl;
+	cout << "srcmac: " << pkt.srcmac << endl;
+	cout << "dstip: " << pkt.dstip << endl;
+	cout << "dstmac: " << pkt.dstmac << endl;
+}
 
 Station::Station(bool routerFlag, string ifaceFile, string rtableFile, string hostFile)
 {
@@ -31,14 +49,16 @@ Station::Station(bool routerFlag, string ifaceFile, string rtableFile, string ho
  */
 void Station::handlePacket(char inputBuffer[BUFSIZE])
 {
+	cout << "handlePacket input buffer: " << inputBuffer << endl;
 	// The packet will come to us as an EtherPkt.  Determine if the EtherPkt is wrapping
 	// an IP packet or ARP pkt
 	EtherPkt etherPkt = writeBytesToEtherPacket(inputBuffer);
+	etherPkt.dump();
 	
 	// If we have received an ARP Packet, we need to know if it is a request or a reply
 	if(etherPkt.type == TYPE_ARP_PKT) {
 		ARP_PKT arpPkt = writeBytesToArpPkt(etherPkt.data);
-		
+		dumpArpPkt(arpPkt);
 		if(arpPkt.op == ARP_REQUEST)
 			constructArpReply(arpPkt);
 		// We've received a reply, which means that we can map the dest IP to a dest MAC
@@ -62,25 +82,6 @@ void Station::handlePacket(char inputBuffer[BUFSIZE])
 			// TODO: consult routing table and forward
 		}
 	}
-}
-
-void dumpIpPkt(IP_PKT pkt)
-{
-	cout << "IP PACKET DUMP" << endl;
-	cout << "dstip: " << pkt.dstip << endl;
-	cout << "srcip: " << pkt.srcip << endl;
-	cout << "length: " << pkt.length << endl;
-	cout << "data: " << pkt.data << endl;
-}
-
-void dumpEthPkt(EtherPkt pkt)
-{
-	cout << "ETHER PACKET DUMP" << endl;
-	cout << "dst mac: " << pkt.dst << endl;
-	cout << "src mac: " << pkt.src << endl;
-	cout << "type: " << pkt.type << endl;
-	cout << "size: " << pkt.size << endl;
-	cout << "data: " << pkt.data << endl;
 }
 
 /**
@@ -140,7 +141,7 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 		
 		ipPkt.length = sizeof(ipPkt.data);
 		
-		dumpIpPkt(ipPkt);
+		//dumpIpPkt(ipPkt);
 		
 		// Now, construct the ethernet packet and lookup the destination mac address
 		EtherPkt etherPkt;
@@ -150,12 +151,12 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 		etherPkt.type = TYPE_IP_PKT;
 		vector<unsigned char> ipBytes = writeIpPktToBytes(ipPkt);
 		
-		for(unsigned int i = 0; i < sizeof(etherPkt.data); ++i)
-				etherPkt.data[i] = 0;
 		memcpy(etherPkt.data, &ipBytes[0], ipBytes.size());
 		
 		etherPkt.size = ipBytes.size();
-	
+		
+		//etherPkt.dump();
+		
 		// Lookup mac address in ARP cache for destination.  If we can't find it, then store the packet in a queue
 		// of packets waiting on ARP replies and send out an ARP request.
 		auto cacheItr = m_arpCache.find(ipPkt.dstip);
@@ -163,13 +164,6 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 			cout << "Could not find " << ntop(ipPkt.dstip) << " in the cache" << endl;
 			// It wasn't found, send ARP request and add the packet to a wait queue
 			constructArpRequest(ipPkt.dstip);
-
-			// In the m_arpWaitQueue, invalid mac destiations will be NULL.  This lets us
-			// distinguish between which packets have received ARP responses and which have not
-			for(unsigned int i = 0; i < sizeof(MacAddr); ++i)
-				etherPkt.dst[i] = 0;
-			
-			strcpy(etherPkt.dst, "00:00:00:00:00");
 
 			m_arpWaitQueue.push_back(etherPkt);
 		}
@@ -183,8 +177,6 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 			vector<unsigned char> ethBytes = writeEthernetPacketToBytes(etherPkt);
 			m_pendingQueue.push_back(ethBytes);
 		}
-		
-		dumpEthPkt(etherPkt);
 	}
 
 	else if(command == "show")
@@ -258,11 +250,6 @@ void Station::sendPendingPackets()
 void Station::constructArpRequest(IPAddr dstip)
 {
 	EtherPkt etherPkt;
-	for(unsigned int i = 0; i < sizeof(MacAddr); ++i)
-		etherPkt.dst[i] = 0;
-	// Mac address is a char[18], where first 17 chars are the mac address and
-	// final char is termination
-	etherPkt.dst[17] = '\0';
 	
 	strcpy(etherPkt.src, mac().c_str());
 	etherPkt.type = TYPE_ARP_PKT;
@@ -275,6 +262,9 @@ void Station::constructArpRequest(IPAddr dstip)
 	arpPkt.dstip = dstip;
 	strcpy(arpPkt.srcmac, mac().c_str());
 	cout << "mac(): " << mac() << endl;
+	
+	strcpy(arpPkt.dstmac, etherPkt.dst);
+	dumpArpPkt(arpPkt);
 
 	// The ARP packet will be contained in the EtherPkt's data buffer
 	vector<unsigned char> arpBytes = writeArpPktToBytes(arpPkt);
@@ -284,7 +274,7 @@ void Station::constructArpRequest(IPAddr dstip)
 	
 	// Need EtherPkt bytes for pendingQueue
 	vector<unsigned char> ethBytes = writeEthernetPacketToBytes(etherPkt);
-	
+	//etherPkt.dump()
 	m_pendingQueue.push_back(ethBytes);
 }
 

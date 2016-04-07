@@ -7,6 +7,7 @@
 #include "ip.h"
 #include "ip_mac_interface.h"
 #include <sys/time.h>
+#include "ether_packet.h"
 
 struct CacheEntry {
 	MacAddr mac;

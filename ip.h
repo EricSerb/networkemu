@@ -94,33 +94,6 @@ typedef struct ip_pkt
 	char    data[BUFSIZE-(ETHPKTHEADER+IPPKTHEADER)];
 } IP_PKT;
 
-/* structure of an ethernet pkt
- * We can copy the contents of an IP_PKT data buffer to this data buffer
- * when it is time for a station to construct a packet to send via MAC address
- */
-typedef struct __etherpkt 
-{
-	/* destination address in net order */
-	MacAddr dst;
-
-	/* source address in net order */
-	MacAddr src;
-
-	/************************************/
-	/* payload type in host order       */
-	/* type = 0 : ARP frame             */
-	/* type = 1 : IP  frame             */
-	/************************************/
-	short  type;
-
-	/* size of the data in host order */
-	short   size;
-
-	/* actual payload */
-	char data[BUFSIZE-ETHPKTHEADER];
-
-} EtherPkt;
-
 /*queue for ip packet that has not yet sent out
 typedef struct p_queue
 {

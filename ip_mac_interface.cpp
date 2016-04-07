@@ -85,11 +85,12 @@ std::vector< unsigned char > writeIpPktToBytes(IP_PKT pkt)
 EtherPkt writeBytesToEtherPacket(char *buffer)
 {
 	EtherPkt etherPkt;
-	memcpy(&etherPkt.dst, &buffer[0], 18);
-	memcpy(&etherPkt.src, &buffer[18], 18);
+	memcpy(etherPkt.dst, &buffer[0], sizeof(MacAddr));
+	cout << __func__ << " dst: " << etherPkt.dst << endl;
+	memcpy(etherPkt.src, &buffer[18], 18);
 	memcpy(&etherPkt.type, &buffer[36], 2);
 	memcpy(&etherPkt.size, &buffer[38], 2);
-	memcpy(&etherPkt.data, &buffer[40], BUFSIZE/2);
+	memcpy(etherPkt.data, &buffer[40], BUFSIZE-ETHPKTHEADER);
 	
 	return etherPkt;
 }

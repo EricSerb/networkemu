@@ -26,6 +26,7 @@
 #include "ip.h"
 #include <cstring>
 #include <map>
+#include "ether_packet.h"
 /*----------------------------------------------------------------*/
 
 using namespace std;
