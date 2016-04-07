@@ -10,7 +10,7 @@ all: bridge station
 bridge: bridge.o parser.o ether_packet.o
 	g++ -o $@ $^ $(CXXFLAGS)
 
-station: station_main.o station.o parser.o ether_packet.o arp_packet.o ip_mac_interface.o
+station: station_main.o station.o parser.o ether_packet.o arp_packet.o ip_packet.o ip_mac_interface.o
 	g++ -o $@ $^ $(CXXFLAGS)
 
 clean : 

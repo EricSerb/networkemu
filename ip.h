@@ -75,15 +75,6 @@ typedef struct arp_list {
 	struct arp_list *next;
 } ARP_LIST;
 
-/*IP packet format*/
-typedef struct ip_pkt
-{
-	IPAddr  dstip;
-	IPAddr  srcip;
-	short   length;
-	char    data[BUFSIZE-(ETHPKTHEADER+IPPKTHEADER)];
-} IP_PKT;
-
 /*queue for ip packet that has not yet sent out
 typedef struct p_queue
 {

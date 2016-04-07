@@ -5,14 +5,6 @@
 #include <algorithm>
 
 using namespace std;
-void dumpIpPkt(IP_PKT pkt)
-{
-	cout << "IP PACKET DUMP" << endl;
-	cout << "dstip: " << pkt.dstip << endl;
-	cout << "srcip: " << pkt.srcip << endl;
-	cout << "length: " << pkt.length << endl;
-	cout << "data: " << pkt.data << endl;
-}
 
 Station::Station(bool routerFlag, string ifaceFile, string rtableFile, string hostFile)
 {
@@ -83,7 +75,6 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 	string line(inputBuffer);
 	
 	stringstream linestream(line);
-
 	
 	// only handle lowercase commands
 	string command;
@@ -125,13 +116,11 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 		// TODO:  what if the host isn't in our host file?
 		ipPkt.dstip = m_hostMap.find(dstHost)->second;
 		
-		for(unsigned int i = 0; i < sizeof(ipPkt.data); ++i)
-				ipPkt.data[i] = 0;
 		strcpy(ipPkt.data, data.c_str());
 		
 		ipPkt.length = sizeof(ipPkt.data);
 		
-		//dumpIpPkt(ipPkt);
+		//ipPkt.dump();
 		
 		// Now, construct the ethernet packet and lookup the destination mac address
 		EtherPkt etherPkt;

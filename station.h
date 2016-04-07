@@ -10,6 +10,7 @@
 #include "ether_packet.h"
 #include "arp_packet.h"
 #include "ip_mac_interface.h"
+#include "ip_packet.h"
 
 struct CacheEntry {
 	MacAddr mac;
