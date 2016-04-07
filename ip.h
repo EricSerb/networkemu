@@ -89,7 +89,7 @@ typedef struct ip_pkt
 	IPAddr  dstip;
 	IPAddr  srcip;
 	short   length;
-	char    data[BUFSIZE/2];
+	char    data[BUFSIZE/4];
 }__attribute__(( packed )) IP_PKT;
 
 /* structure of an ethernet pkt

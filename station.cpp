@@ -134,20 +134,24 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 		// of packets waiting on ARP replies and send out an ARP request.
 		auto cacheItr = m_arpCache.find(ipPkt.dstip);
 		if(cacheItr == m_arpCache.end()) {
+			cout << "Could not find " << ntop(ipPkt.dstip) << " in the cache" << endl;
 			// It wasn't found, send ARP request and add the packet to a wait queue
 			constructArpRequest(ipPkt.dstip);
-			
+
 			// In the m_arpWaitQueue, invalid mac destiations will be NULL.  This lets us
 			// distinguish between which packets have received ARP responses and which have not
-			memcpy(etherPkt.dst, 0, sizeof(MacAddr));
-			
+			for(unsigned int i = 0; i < sizeof(MacAddr); ++i)
+				etherPkt.dst[i] = 0;
+
 			m_arpWaitQueue.push_back(etherPkt);
 		}
 		else {
+			cout << "Found " << ntop(ipPkt.dstip) << " in the cache!" << endl;
 			// It was found, drop the packet in the pending queue.  Update the timestamp for the cache entry,
 			// as it is being accessed
 			gettimeofday(&(cacheItr->second.timeStamp), NULL);
 			strcpy(etherPkt.dst, cacheItr->second.mac);
+			cout << "eth.dst" << etherPkt.dst << endl;
 			vector<unsigned char> ethBytes = writeEthernetPacketToBytes(etherPkt);
 			m_pendingQueue.push_back(ethBytes);
 		}
@@ -194,10 +198,12 @@ void Station::sendPendingPackets()
 	for(unsigned int i = 0; i < m_pendingQueue.size(); ++i) {
 		char buf[BUFSIZE];
 		memcpy(&buf, &m_pendingQueue[i][0], m_pendingQueue[i].size());
-		if(send(i, buf, sizeof(buf), 0) == -1) {
+		if(send(socket(), buf, sizeof(buf), 0) == -1) {
 			cout << "Could not send m_pendingQueue[" << i << "]: " << &m_pendingQueue[i] << endl;
 			cout << "buf: " << buf << endl;
 		}
+		else
+			cout << "sent a packet successfully!" << endl;
 	}
 }
 
