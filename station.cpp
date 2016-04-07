@@ -205,6 +205,8 @@ void Station::sendPendingPackets()
 		else
 			cout << "sent a packet successfully!" << endl;
 	}
+	
+	m_pendingQueue.clear();
 }
 
 
