@@ -14,16 +14,6 @@ void dumpIpPkt(IP_PKT pkt)
 	cout << "data: " << pkt.data << endl;
 }
 
-void dumpArpPkt(ARP_PKT pkt)
-{
-	cout << "ARP PACKET DUMP" << endl;
-	cout << "op: " << pkt.op << endl;
-	cout << "srcip: " << pkt.srcip << endl;
-	cout << "srcmac: " << pkt.srcmac << endl;
-	cout << "dstip: " << pkt.dstip << endl;
-	cout << "dstmac: " << pkt.dstmac << endl;
-}
-
 Station::Station(bool routerFlag, string ifaceFile, string rtableFile, string hostFile)
 {
 	m_router = routerFlag;
@@ -58,7 +48,7 @@ void Station::handlePacket(char inputBuffer[BUFSIZE])
 	// If we have received an ARP Packet, we need to know if it is a request or a reply
 	if(etherPkt.type == TYPE_ARP_PKT) {
 		ARP_PKT arpPkt = writeBytesToArpPkt(etherPkt.data);
-		dumpArpPkt(arpPkt);
+		arpPkt.dump();
 		if(arpPkt.op == ARP_REQUEST)
 			constructArpReply(arpPkt);
 		// We've received a reply, which means that we can map the dest IP to a dest MAC
@@ -264,7 +254,7 @@ void Station::constructArpRequest(IPAddr dstip)
 	cout << "mac(): " << mac() << endl;
 	
 	strcpy(arpPkt.dstmac, etherPkt.dst);
-	dumpArpPkt(arpPkt);
+	arpPkt.dump();
 
 	// The ARP packet will be contained in the EtherPkt's data buffer
 	vector<unsigned char> arpBytes = writeArpPktToBytes(arpPkt);

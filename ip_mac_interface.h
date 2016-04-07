@@ -4,6 +4,8 @@
 #include "ip.h"
 #include <vector>
 #include <cstring>
+#include "ether_packet.h"
+#include "arp_packet.h"
 
 // DATA LINK LAYER
 std::vector<unsigned char> writeEthernetPacketToBytes(EtherPkt pkt);

@@ -75,16 +75,6 @@ typedef struct arp_list {
 	struct arp_list *next;
 } ARP_LIST;
 
-/*ARP packet format*/
-typedef struct arp_pkt 
-{
-	short op; /* op =0 : ARP request; op = 1 : ARP response */
-	IPAddr srcip;
-	MacAddr srcmac;
-	IPAddr dstip;
-	MacAddr dstmac;
-} ARP_PKT;
-
 /*IP packet format*/
 typedef struct ip_pkt
 {

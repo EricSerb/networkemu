@@ -9,6 +9,7 @@
  */
 class EtherPkt 
 {
+public:
 	EtherPkt();
 	
 	void dump();

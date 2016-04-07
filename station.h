@@ -4,10 +4,12 @@
 #include <vector>
 #include <map>
 #include <string>
-#include "ip.h"
-#include "ip_mac_interface.h"
 #include <sys/time.h>
+
+#include "ip.h"
 #include "ether_packet.h"
+#include "arp_packet.h"
+#include "ip_mac_interface.h"
 
 struct CacheEntry {
 	MacAddr mac;
