@@ -23,9 +23,9 @@ int main (int argc, char *argv[])
 	// Check if we're a station or a router
 	bool routerFlag;
 	
-	if(strcmp(argv[1], "-router") < 0)
+	if(strcmp(argv[1], "-router") == 0)
 		routerFlag = true;
-	else if(strcmp(argv[1], "-no") < 0)
+	else if(strcmp(argv[1], "-no") == 0)
 		routerFlag = false;
 	else {
 		cout << "Router flag must be `-no` or `-station`" << endl;
