@@ -20,8 +20,6 @@
 #define BUFSIZE 1024
 #define ETHPKTHEADER 40
 #define IPPKTHEADER 10
-#define ETHERBUFSIZE BUFSIZE-ETHPKTHEADER
-#define IPBUFSIZE BUFSIZE-(ETHPKTHEADER+IPPKTHEADER)
 
 typedef unsigned long IPAddr;
 
@@ -77,6 +75,15 @@ typedef struct arp_list {
 	struct arp_list *next;
 } ARP_LIST;
 
+/*IP packet format*/
+typedef struct ip_pkt
+{
+	IPAddr  dstip;
+	IPAddr  srcip;
+	short   length;
+	char    data[BUFSIZE-(ETHPKTHEADER+IPPKTHEADER)];
+} IP_PKT;
+
 /*queue for ip packet that has not yet sent out
 typedef struct p_queue
 {
@@ -99,6 +106,7 @@ typedef struct packet_queue
 	char buf[BUFSIZE];
 	int socketIn;
 	int socketOut;
+	short type;
 	bool known = false;
 } PacketQ;
 
