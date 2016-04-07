@@ -32,7 +32,7 @@ public:
 	void handleUserInput(char inputBuffer[BUFSIZE]);
 	void handlePacket(char inputBuffer[BUFSIZE]);
 	
-	void constructArpRequest(IP_PKT ipPkt);
+	void constructArpRequest(IPAddr dstip);
 	void constructArpReply(ARP_PKT general);
 	
 	void displayArpCache();

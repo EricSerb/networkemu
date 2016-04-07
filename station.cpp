@@ -106,9 +106,51 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 		data = newBuf.substr(k, (newBuf.length() - k));
 		
 		cout << "dstHost: " << dstHost << endl << "data: " << data << endl;
+		
+		// First, construct an IP packet.  This will be encapsulated in an EtherPkt,
+		// which will need to handle finding the destination MAC address
+		IP_PKT ipPkt;
+		ipPkt.srcip = ip();
 
-		//TODO: look up host from hosts map to get ip and then using the routing table get the MAC
-		//if there is not MAC must send out an ARP and wait to send this message.
+		// Try to find the IP in our host file.
+		// TODO:  what if the host isn't in our host file?
+		ipPkt.dstip = m_hostMap.find(dstHost)->second;
+		
+		strcpy(ipPkt.data, data.c_str());
+		ipPkt.length = sizeof(ipPkt.data);
+		
+		// Now, construct the ethernet packet and lookup the destination mac address
+		EtherPkt etherPkt;
+		
+		strcpy(etherPkt.src, mac().c_str());
+		
+		etherPkt.type = TYPE_IP_PKT;
+		vector<unsigned char> ipBytes = writeIpPktToBytes(ipPkt);
+		memcpy(etherPkt.data, &ipBytes[0], ipBytes.size());
+		
+		etherPkt.size = ipBytes.size();
+		
+		// Lookup mac address in ARP cache for destination.  If we can't find it, then store the packet in a queue
+		// of packets waiting on ARP replies and send out an ARP request.
+		auto cacheItr = m_arpCache.find(ipPkt.dstip);
+		if(cacheItr == m_arpCache.end()) {
+			// It wasn't found, send ARP request and add the packet to a wait queue
+			constructArpRequest(ipPkt.dstip);
+			
+			// In the m_arpWaitQueue, invalid mac destiations will be NULL.  This lets us
+			// distinguish between which packets have received ARP responses and which have not
+			memcpy(etherPkt.dst, 0, sizeof(MacAddr));
+			
+			m_arpWaitQueue.push_back(etherPkt);
+		}
+		else {
+			// It was found, drop the packet in the pending queue.  Update the timestamp for the cache entry,
+			// as it is being accessed
+			gettimeofday(&(cacheItr->second.timeStamp), NULL);
+			strcpy(etherPkt.dst, cacheItr->second.mac);
+			vector<unsigned char> ethBytes = writeEthernetPacketToBytes(etherPkt);
+			m_pendingQueue.push_back(ethBytes);
+		}
 	}
 
 	else if(command == "show")
@@ -168,11 +210,8 @@ void Station::sendPendingPackets()
  * inside of an EtherPkt
  * 
  * TODO: support multiple NICs for m_ifaces ipaddr/macaddr
- * TODO: do we NEED to send in an IP_PKT?  If we can't construct an IP_PKT because we don't know the dest MAC,
- * 	then maybe we should only be passing in the dest IP address for now (in fact, that is the only field we use
- * 	from IP_PKT)
  */
-void Station::constructArpRequest(IP_PKT ipPkt)
+void Station::constructArpRequest(IPAddr dstip)
 {
 	EtherPkt etherPkt;
 	for(unsigned int i = 0; i < sizeof(MacAddr); ++i)
@@ -189,7 +228,7 @@ void Station::constructArpRequest(IP_PKT ipPkt)
 	
 	arpPkt.op = 0;
 	arpPkt.srcip = ip();
-	arpPkt.dstip = ipPkt.dstip;
+	arpPkt.dstip = dstip;
 	strcpy(arpPkt.srcmac, mac().c_str());
 	cout << "mac(): " << mac() << endl;
 

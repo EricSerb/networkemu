@@ -92,7 +92,7 @@ int main (int argc, char *argv[])
 					station.handlePacket(buf);
 				}
 				
-				else if(i == fileno(stdin)) {
+				else if(!station.router() && i == fileno(stdin)) {
 					bytesRead = read(i, buf, sizeof buf);
 					
 					if(bytesRead > 0) {
