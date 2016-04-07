@@ -18,6 +18,8 @@
 #define TYPE_ARP_PKT 0
 
 #define BUFSIZE 1024
+#define ETHPKTHEADER 40
+#define IPPKTHEADER 10
 
 typedef unsigned long IPAddr;
 
@@ -89,7 +91,7 @@ typedef struct ip_pkt
 	IPAddr  dstip;
 	IPAddr  srcip;
 	short   length;
-	char    data[BUFSIZE/4];
+	char    data[BUFSIZE-(ETHPKTHEADER+IPPKTHEADER)];
 } IP_PKT;
 
 /* structure of an ethernet pkt
@@ -115,7 +117,7 @@ typedef struct __etherpkt
 	short   size;
 
 	/* actual payload */
-	char data[BUFSIZE/2];
+	char data[BUFSIZE-ETHPKTHEADER];
 
 } EtherPkt;
 
