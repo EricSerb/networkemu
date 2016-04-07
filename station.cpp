@@ -64,6 +64,24 @@ void Station::handlePacket(char inputBuffer[BUFSIZE])
 	}
 }
 
+void dumpIpPkt(IP_PKT pkt)
+{
+	cout << "IP PACKET DUMP" << endl;
+	cout << "dstip: " << pkt.dstip << endl;
+	cout << "srcip: " << pkt.srcip << endl;
+	cout << "length: " << pkt.length << endl;
+	cout << "data: " << pkt.data << endl;
+}
+
+void dumpEthPkt(EtherPkt pkt)
+{
+	cout << "ETHER PACKET DUMP" << endl;
+	cout << "dst mac: " << pkt.dst << endl;
+	cout << "src mac: " << pkt.src << endl;
+	cout << "type: " << pkt.type << endl;
+	cout << "size: " << pkt.size << endl;
+	cout << "data: " << pkt.data << endl;
+}
 
 /**
  * Parse through commands typed by the user and perform the appropriate I/O
@@ -116,8 +134,13 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 		// TODO:  what if the host isn't in our host file?
 		ipPkt.dstip = m_hostMap.find(dstHost)->second;
 		
+		for(unsigned int i = 0; i < sizeof(ipPkt.data); ++i)
+				ipPkt.data[i] = 0;
 		strcpy(ipPkt.data, data.c_str());
+		
 		ipPkt.length = sizeof(ipPkt.data);
+		
+		dumpIpPkt(ipPkt);
 		
 		// Now, construct the ethernet packet and lookup the destination mac address
 		EtherPkt etherPkt;
@@ -126,10 +149,13 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 		
 		etherPkt.type = TYPE_IP_PKT;
 		vector<unsigned char> ipBytes = writeIpPktToBytes(ipPkt);
+		
+		for(unsigned int i = 0; i < sizeof(etherPkt.data); ++i)
+				etherPkt.data[i] = 0;
 		memcpy(etherPkt.data, &ipBytes[0], ipBytes.size());
 		
 		etherPkt.size = ipBytes.size();
-		
+	
 		// Lookup mac address in ARP cache for destination.  If we can't find it, then store the packet in a queue
 		// of packets waiting on ARP replies and send out an ARP request.
 		auto cacheItr = m_arpCache.find(ipPkt.dstip);
@@ -142,6 +168,8 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 			// distinguish between which packets have received ARP responses and which have not
 			for(unsigned int i = 0; i < sizeof(MacAddr); ++i)
 				etherPkt.dst[i] = 0;
+			
+			strcpy(etherPkt.dst, "00:00:00:00:00");
 
 			m_arpWaitQueue.push_back(etherPkt);
 		}
@@ -155,6 +183,8 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 			vector<unsigned char> ethBytes = writeEthernetPacketToBytes(etherPkt);
 			m_pendingQueue.push_back(ethBytes);
 		}
+		
+		dumpEthPkt(etherPkt);
 	}
 
 	else if(command == "show")
@@ -195,15 +225,21 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
  */
 void Station::sendPendingPackets()
 {
+	if(m_pendingQueue.size() > 0)
+		displayPQ();
+	
 	for(unsigned int i = 0; i < m_pendingQueue.size(); ++i) {
 		char buf[BUFSIZE];
+		for(unsigned int i = 0; i < sizeof(buf); ++i)
+				buf[i] = 0;
+		
 		memcpy(&buf, &m_pendingQueue[i][0], m_pendingQueue[i].size());
 		if(send(socket(), buf, sizeof(buf), 0) == -1) {
 			cout << "Could not send m_pendingQueue[" << i << "]: " << &m_pendingQueue[i] << endl;
 			cout << "buf: " << buf << endl;
 		}
 		else
-			cout << "sent a packet successfully!" << endl;
+			cout << "sent a packet successfully! buffer is << " << buf  << endl;
 	}
 	
 	m_pendingQueue.clear();
@@ -348,7 +384,7 @@ void Station::displayPQ()
 	{
 		for(unsigned int j = 0; j < m_pendingQueue[i].size(); j++)
 		{
-			cout << m_pendingQueue[i][j] << endl;	
+			cout << m_pendingQueue[i][j];	
 		}
 	}
 	cout << endl;

@@ -32,7 +32,7 @@ typedef struct iface {
 	IPAddr mask;
 	MacAddr macaddr;
 	char lanname[32];
-}__attribute__(( packed )) Iface;
+} Iface;
 
 /* mapping between interface name and socket id representing link */
 typedef struct itface2link {
@@ -81,7 +81,7 @@ typedef struct arp_pkt
 	MacAddr srcmac;
 	IPAddr dstip;
 	MacAddr dstmac;
-}__attribute__(( packed )) ARP_PKT;
+} ARP_PKT;
 
 /*IP packet format*/
 typedef struct ip_pkt
@@ -90,7 +90,7 @@ typedef struct ip_pkt
 	IPAddr  srcip;
 	short   length;
 	char    data[BUFSIZE/4];
-}__attribute__(( packed )) IP_PKT;
+} IP_PKT;
 
 /* structure of an ethernet pkt
  * We can copy the contents of an IP_PKT data buffer to this data buffer
@@ -117,7 +117,7 @@ typedef struct __etherpkt
 	/* actual payload */
 	char data[BUFSIZE/2];
 
-}__attribute__(( packed )) EtherPkt;
+} EtherPkt;
 
 /*queue for ip packet that has not yet sent out
 typedef struct p_queue

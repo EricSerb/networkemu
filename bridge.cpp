@@ -324,12 +324,14 @@ int main (int argc, char *argv[])
 					*/
 					
 						//Cout for testing that we are receiving packets correctly
-
+						cout << "nbytes: " << nbytes << endl;
 						strcpy(pkt.buf, buf);
+						cout << "buf: " << buf << endl;
 						string buffer;
 						buffer.assign(buf);
+						cout << "buffer: " << buffer << endl;
 						string src;
-						src.assign(buffer, 17, 17);
+						src.assign(buffer, 18, 18);
 						//cout << "src: " << src << endl;
 						//memcpy(&src, &buf[17], 17);
 						
