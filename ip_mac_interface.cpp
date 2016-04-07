@@ -85,12 +85,29 @@ std::vector< unsigned char > writeIpPktToBytes(IP_PKT pkt)
 EtherPkt writeBytesToEtherPacket(char *buffer)
 {
 	EtherPkt etherPkt;
-	memcpy(etherPkt.dst, &buffer[0], sizeof(MacAddr));
+	
+	/* memcpy(etherPkt.dst, &buffer[0], sizeof(MacAddr));
 	cout << __func__ << " dst: " << etherPkt.dst << endl;
 	memcpy(etherPkt.src, &buffer[18], 18);
 	memcpy(&etherPkt.type, &buffer[36], 2);
 	memcpy(&etherPkt.size, &buffer[38], 2);
-	memcpy(etherPkt.data, &buffer[40], BUFSIZE-ETHPKTHEADER);
+	memcpy(etherPkt.data, &buffer[40], BUFSIZE-ETHPKTHEADER); */
+	
+	unsigned int i = 0;
+	int j = 0;
+	
+	for(i = i; i < sizeof(MacAddr); i++, j++)
+		etherPkt.dst[j] = buffer[i];
+	j = 0;
+	for(i = i; i < (i + sizeof(MacAddr)); i++, j++)
+		etherPkt.src[j] = buffer[i];
+	j = 0;
+	//Think we still need to memcpy these dont think for loop will work
+	memcpy(&etherPkt.type, &buffer[36], 2);
+	memcpy(&etherPkt.size, &buffer[38], 2);
+	i += (sizeof(short)*2);
+	for(i = i; i < (i+(BUFSIZE-ETHPKTHEADER)); i++, j++)
+		etherPkt.data[j] = buffer[i];
 	
 	return etherPkt;
 }
@@ -147,11 +164,16 @@ ARP_PKT writeBytesToArpPkt(char* buffer)
 	memcpy(&(pkt.srcip), &(buffer[2]), 4);
 	
 	//get src mac
-	memcpy(&(pkt.srcmac), &(buffer[6]), 18);
+	//memcpy(&(pkt.srcmac), &(buffer[6]), 18);
+	for(int i = 6, j = 0; i < (6+18); i++, j++)
+		pkt.srcmac[j] = buffer[i];
+	
 	
 	memcpy(&(pkt.dstip), &(buffer[24]), 4);
 	
-	memcpy(&(pkt.dstmac), &(buffer[28]), 18);
+	//memcpy(&(pkt.dstmac), &(buffer[28]), 18);
+	for(int i = 24, j = 0; i < (24 + 18); i++, j++)
+		pkt.dstmac[j] = buffer[i];
 	
 	return pkt;
 }
@@ -167,7 +189,9 @@ IP_PKT writeBytesToIpPkt(char *buffer)
 	
 	memcpy(&(pkt.length), &(buffer[14]), 2);
 	
-	memcpy((pkt.data), &(buffer[16]), pkt.length);
+	//memcpy((pkt.data), &(buffer[16]), pkt.length);
+	for(int i = 16, j = 0; i < pkt.length; i++, j++)
+		pkt.data[j] = buffer[i];
 	
 	return pkt;
 }
