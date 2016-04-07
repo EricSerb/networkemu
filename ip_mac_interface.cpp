@@ -91,22 +91,28 @@ EtherPkt writeBytesToEtherPacket(char *buffer)
 	memcpy(etherPkt.src, &buffer[18], 18);
 	memcpy(&etherPkt.type, &buffer[36], 2);
 	memcpy(&etherPkt.size, &buffer[38], 2);
-	memcpy(etherPkt.data, &buffer[40], BUFSIZE-ETHPKTHEADER); */
-	
-	unsigned int i = 0;
-	int j = 0;
-	
-	for(i = i; i < sizeof(MacAddr); i++, j++)
-		etherPkt.dst[j] = buffer[i];
-	j = 0;
-	for(i = i; i < (i + sizeof(MacAddr)); i++, j++)
-		etherPkt.src[j] = buffer[i];
-	j = 0;
-	//Think we still need to memcpy these dont think for loop will work
 	memcpy(&etherPkt.type, &buffer[36], 2);
 	memcpy(&etherPkt.size, &buffer[38], 2);
-	i += (sizeof(short)*2);
-	for(i = i; i < (i+(BUFSIZE-ETHPKTHEADER)); i++, j++)
+	memcpy(etherPkt.data, &buffer[40], BUFSIZE-ETHPKTHEADER); */
+	
+	int i = 0, int j = 0;
+	
+	for(j = 0; (unsigned int)j < sizeof(MacAddr); i++, j++)
+		etherPkt.dst[j] = buffer[i];
+	j = 0;
+	for(j = 0; (unsigned int)j < (sizeof(MacAddr)); i++, j++)
+		etherPkt.src[j] = buffer[i];
+	j = 0;
+	
+	char type[2], size[2];
+	for(j = 0; j < 2; i++, j++)
+		type[j] = buffer[i]
+	for(j = 0; j < 2; i++, j++)
+		size[j] = buffer[i];
+	pkt.type = atoi(type);
+	pkt.size = atoi(size);
+	
+	for(j = 0; j < ((BUFSIZE-ETHPKTHEADER)); i++, j++)
 		etherPkt.data[j] = buffer[i];
 	
 	return etherPkt;
@@ -156,23 +162,34 @@ std::vector<unsigned char> writeArpPktToBytes(ARP_PKT pkt)
 ARP_PKT writeBytesToArpPkt(char* buffer)
 {
 	ARP_PKT pkt;
+	int i = 0, j = 0;
 	
 	// get the op out
-	memcpy(&(pkt.op), &(buffer[0]), 2);
-	
+	//memcpy(&(pkt.op), &(buffer[0]), 2);
+	//get op out of buf to another string then atoi
+	char op[2];
+	for(j = 0; j < 2; i++, j++)
+		op[j] = buffer[i];
+	pkt.op = atoi(op);
 	//get the src ip
-	memcpy(&(pkt.srcip), &(buffer[2]), 4);
-	
+	//memcpy(&(pkt.srcip), &(buffer[2]), 4);
+	char ip[4];
+	for(j = 0; j < 4; i++, j++)
+		ip[j] = buffer[i];
+	pkt.srcip = atoi(ip);
 	//get src mac
 	//memcpy(&(pkt.srcmac), &(buffer[6]), 18);
-	for(int i = 6, j = 0; i < (6+18); i++, j++)
+	for(j = 0; j < 18; i++, j++)
 		pkt.srcmac[j] = buffer[i];
 	
 	
-	memcpy(&(pkt.dstip), &(buffer[24]), 4);
+	//memcpy(&(pkt.dstip), &(buffer[24]), 4);
+	for(j = 0; j < 4; i++, j++)
+		ip[j] = buffer[i];
+	pkt.dstip = atoi(ip);
 	
 	//memcpy(&(pkt.dstmac), &(buffer[28]), 18);
-	for(int i = 24, j = 0; i < (24 + 18); i++, j++)
+	for(j = 0; j < 18; i++, j++)
 		pkt.dstmac[j] = buffer[i];
 	
 	return pkt;
@@ -181,15 +198,31 @@ ARP_PKT writeBytesToArpPkt(char* buffer)
 IP_PKT writeBytesToIpPkt(char *buffer)
 {
 	IP_PKT pkt;
+	int i = 0, j = 0;
 	
 	//memcpy areas of buffer to form the ip packet that was just sent to us
-	memcpy(&(pkt.dstip), &(buffer[0]), 4);
+	//memcpy(&(pkt.dstip), &(buffer[0]), 4);
 	
-	memcpy(&(pkt.srcip), &(buffer[4]), 4);
+	//memcpy(&(pkt.srcip), &(buffer[4]), 4);
 	
-	memcpy(&(pkt.length), &(buffer[14]), 2);
+	//memcpy(&(pkt.length), &(buffer[14]), 2);
 	
 	//memcpy((pkt.data), &(buffer[16]), pkt.length);
+	
+	char ip[4];
+	for(j = 0; j < 4; i++, j++)
+		ip[j] = buffer[i];
+	pkt.dstip = atoi(ip);
+	
+	for(j = 0; j < 4; i++, j++)
+		ip[j] = buffer[i];
+	pkt.srcip = atoi(ip);
+	
+	char length[2];
+	for(j = 0; j < 2; i++, j++)
+		length[j] = buffer[i];
+	pkt.length = atoi(length);
+	
 	for(int i = 16, j = 0; i < pkt.length; i++, j++)
 		pkt.data[j] = buffer[i];
 	
