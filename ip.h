@@ -21,6 +21,9 @@
 #define ETHPKTHEADER 40
 #define IPPKTHEADER 10
 
+#define ETHBUFSIZE BUFSIZE-ETHPKTHEADER
+#define IPBUFSIZE BUFSIZE-(ETHPKTHEADER+IPPKTHEADER)
+
 typedef unsigned long IPAddr;
 
 //XX:XX:XX:XX:XX:XX + terminating character
@@ -74,15 +77,6 @@ typedef struct arp_list {
 	Arpc *arp_item;
 	struct arp_list *next;
 } ARP_LIST;
-
-/*IP packet format*/
-typedef struct ip_pkt
-{
-	IPAddr  dstip;
-	IPAddr  srcip;
-	short   length;
-	char    data[BUFSIZE-(ETHPKTHEADER+IPPKTHEADER)];
-} IP_PKT;
 
 /*queue for ip packet that has not yet sent out
 typedef struct p_queue

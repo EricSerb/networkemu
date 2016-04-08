@@ -31,7 +31,7 @@ public:
 	short   size;
 
 	/* actual payload */
-	char data[BUFSIZE-ETHPKTHEADER];
+	char data[ETHBUFSIZE];
 
 };
 
