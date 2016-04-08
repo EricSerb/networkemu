@@ -77,9 +77,11 @@ int main (int argc, char *argv[])
 		station.sendPendingPackets();
 		for(int i = 0; i <= maxFd; ++i) {
 			int bytesRead = 0;
-			char buf[BUFSIZE/2];
-			memset(buf, '\0', sizeof buf);
 			
+			char buf[BUFSIZE];
+			for(unsigned int j = 0; j < sizeof(buf); ++j)
+				buf[i] = 0;
+
 			if (FD_ISSET(i, &readSet)) {
 				if(i == station.socket()) {
 					// If no bytes are read, something is wrong.  Exit.
@@ -87,8 +89,7 @@ int main (int argc, char *argv[])
 						cout << "recv error in select() loop" << endl;
 						return 1;
 					}
-					//buf[bytesRead + 1] = '\0';
-					//cout << ">>> " << buf;
+					cout << "received packet from bridge (socket " << i << ") with bytesRead: " << bytesRead << " and buf: " << buf << endl;
 					
 					station.handlePacket(buf);
 				}
@@ -97,9 +98,6 @@ int main (int argc, char *argv[])
 					bytesRead = read(i, buf, sizeof buf);
 
 					if(bytesRead > 0) {
-						// Need to make sure to terminate this for proper copying
-						buf[bytesRead + 1] = '\0';
-						
 						station.handleUserInput(buf);
 					}
 				}

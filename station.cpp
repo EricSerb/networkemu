@@ -35,16 +35,18 @@ void Station::handlePacket(char inputBuffer[BUFSIZE])
 	// The packet will come to us as an EtherPkt.  Determine if the EtherPkt is wrapping
 	// an IP packet or ARP pkt
 	EtherPkt etherPkt = writeBytesToEtherPacket(inputBuffer);
-	cout << __LINE__ << endl;
+cout << __func__ << __LINE__ << endl;
 	etherPkt.dump();
-	cout << __LINE__ << endl;
+cout << __func__ << __LINE__ << endl;
 	
 	// If we have received an ARP Packet, we need to know if it is a request or a reply
 	if(etherPkt.type == TYPE_ARP_PKT) {
 		ARP_PKT arpPkt = writeBytesToArpPkt(etherPkt.data);
 		arpPkt.dump();
-		if(arpPkt.op == ARP_REQUEST)
+		if(arpPkt.op == ARP_REQUEST) {
+cout << __func__ << __LINE__ << endl;
 			constructArpReply(arpPkt);
+		}
 		// We've received a reply, which means that we can map the dest IP to a dest MAC
 		else if(arpPkt.op == ARP_REPLY) {
 			insertArpCache(arpPkt.dstip, arpPkt.dstmac);
@@ -67,7 +69,7 @@ void Station::handlePacket(char inputBuffer[BUFSIZE])
 		}
 	}
 	
-	cout << __LINE__ << endl;
+cout << __func__ << __LINE__ << endl;
 }
 
 /**
@@ -264,7 +266,7 @@ void Station::constructArpRequest(IPAddr dstip)
 
 void Station::constructArpReply(ARP_PKT general)
 {
-
+cout << __func__ << __LINE__ << endl;
 	ARP_PKT pkt;
 
 	pkt.op = 1;
@@ -274,21 +276,24 @@ void Station::constructArpReply(ARP_PKT general)
 	strcpy(pkt.srcmac, mac().c_str());
 	
 	pkt.dstip = general.srcip;
-
+cout << __func__ << __LINE__ << endl;
 	strcpy(pkt.dstmac, general.srcmac);
-
+	pkt.dump();
+	
 	EtherPkt ePkt;
 
 	strcpy(ePkt.dst, pkt.dstmac);
 	strcpy(ePkt.src, pkt.srcmac);
 	
 	ePkt.type = 0;
-
+cout << __func__ << __LINE__ << endl;
 	vector<unsigned char> arpPkt = writeArpPktToBytes(pkt);
 
 	ePkt.size = arpPkt.size();
 	memcpy(&(ePkt.data), &(arpPkt), ePkt.size);
-
+cout << __func__ << __LINE__ << endl;
+	ePkt.dump();
+cout << __func__ << __LINE__ << endl;
 	vector<unsigned char> ethBytes = writeEthernetPacketToBytes(ePkt);
 	m_pendingQueue.push_back(ethBytes);
 }
@@ -489,7 +494,8 @@ void Station::insertArpCache(IPAddr ip, MacAddr mac)
 	gettimeofday(&(entry.timeStamp), NULL);
 	strcpy(entry.mac, mac);
 
-	m_arpCache.insert(pair<IPAddr, CacheEntry>(ip, entry)); 
+	m_arpCache.insert(pair<IPAddr, CacheEntry>(ip, entry));
+	cout << __func__ << __LINE__ << endl;
 }
 
 CacheEntry Station::lookupArpCache(IPAddr ip)
