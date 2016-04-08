@@ -96,24 +96,33 @@ EtherPkt writeBytesToEtherPacket(char *buffer)
 	memcpy(etherPkt.data, &buffer[40], BUFSIZE-ETHPKTHEADER); */
 	
 	int currentByte = 0;
+	cout << "etherPkt.dst before copy: " << etherPkt.dst << endl;
 	for(unsigned int i = 0; i < sizeof(MacAddr); ++i)
 		etherPkt.dst[i] = buffer[currentByte++];
+	cout << "etherPkt.dst after copy: " << etherPkt.dst << endl;
 	
+	cout << "etherPkt.src before copy: " << etherPkt.src << endl;
 	for(unsigned int i = 0; i < sizeof(MacAddr); ++i)
 		etherPkt.src[i] = buffer[currentByte++];
+	cout << "etherPkt.src after copy: " << etherPkt.src << endl;
 	
+	cout << "etherPkt.type before copy: " << etherPkt.type << endl;
 	char type[2], size[2];
 	for(unsigned int i = 0; i < sizeof(short); ++i)
 		type[i] = buffer[currentByte++];
+	cout << "etherPkt.type after copy: " << etherPkt.type << endl;
 	
+	cout << "etherPkt.size before copy: " << etherPkt.size << endl;
 	for(unsigned int i = 0; i < sizeof(short); ++i)
 		size[i] = buffer[currentByte++];
-	
+	cout << "etherPkt.size after copy: " << etherPkt.size << endl;
 	etherPkt.type = atoi(type);
 	etherPkt.size = atoi(size);
 	
+	cout << "etherPkt.buf before copy: " << etherPkt.data << endl;
 	for(int i = 0; i < ETHBUFSIZE; ++i)
 		etherPkt.data[i] = buffer[currentByte++];
+	cout << "etherPkt.buf after copy: " << etherPkt.data << endl;
 	
 	return etherPkt;
 }
