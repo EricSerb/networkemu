@@ -58,8 +58,7 @@ int main (int argc, char *argv[])
 
 	//max fd #, listening socket descriptor, newly accepted fd, # bytes in buff
 	int fdmax, listener, newfd, nbytes;
-	//buff for client interaction
-	char buf[1024];
+
 	int yes = 1;
 	int addrlen;
 	int numPorts = atoi(argv[2]);
@@ -80,7 +79,7 @@ int main (int argc, char *argv[])
 
 	//Queue for holding packets received and need to be sent out. Also variables for holding 
 	//newly arrived packets so that they can be placed in the queue
-	queue<PacketQ> recPackets;
+	vector<PacketQ> recPackets;
 
 	FD_ZERO(&master);
 	FD_ZERO(&read_fds);
@@ -180,10 +179,14 @@ int main (int argc, char *argv[])
 	
 	// The self learn table.  sin_port of is type unsigned short
 	map<string, MacTableEntry> selfLearnTable;
+	
+	recPackets.clear();
 
-	for(;;)
-	{
-		memset(&buf, 0, sizeof(buf));
+	for(;;) {
+		char buf[BUFSIZE];
+		for(unsigned int i = 0; i < sizeof(buf); ++i)
+			buf[i] = 0;
+
 		read_fds = master;
 
 		//Get the current time and then erase entries in the map if they are older than 30 seconds
@@ -198,37 +201,29 @@ int main (int argc, char *argv[])
 			}
 		}
 		
-		//Send out all the packets in the Queue
-		while(!recPackets.empty())
-		{
-			PacketQ toSend = recPackets.front();
-			recPackets.pop();
+		// Send out all the packets in the Queue
+		while(!recPackets.empty()) {
+			PacketQ toSend = recPackets.back();
+			recPackets.pop_back();
+			
 			/* Send out packets here
 			 * If next hop is not known then broadcast using for loop code
 			 */
-			if(!toSend.known || toSend.arpType == ARP_REQUEST)
-			{
+			if(!toSend.known || toSend.arpType == ARP_REQUEST) {
 				//This is the code for sending out to all ports except the one received on
-				for(int i = 0; i <= fdmax; i++)
-				{
-					//send to everyone
-					if(FD_ISSET(i, &master))
-					{
-						//except the listener and server and port sent in on
-						if(i != listener && i != toSend.socketIn)
-						{
+				for(int i = 0; i <= fdmax; i++) {
+					//send to everyone except the listener and server and port sent in on
+					if(FD_ISSET(i, &master) && i != listener && i != toSend.socketIn) {
 							cout << "i: " << i << endl;
 							//cout << buf << " i = " << j << endl;
-							if(send(i, &toSend.buf[0], sizeof(toSend.buf), 0) == -1)
-							{
+							if(send(i, &toSend.buf[0], sizeof(toSend.buf), 0) == -1) {
 								cout << "Bridge send() error..." << endl;
 							}
 						}
 					}
 				}
-			}
-			else //we know the next hop just need to send to that port
-			{
+			//we know the next hop just need to send to that port
+			else {
 				if(send(toSend.socketOut, &toSend.buf[0], sizeof(toSend.buf), 0) == -1)
 				{
 					cout << "Bridge send() error..." << endl;
@@ -289,18 +284,14 @@ int main (int argc, char *argv[])
 						}
 					}
 				}
-				else
-				{
+				else {
 					//handle data from client
-					if((nbytes = recv(i, buf, sizeof(buf), 0)) <= 0)
-					{
+					if((nbytes = recv(i, buf, sizeof(buf), 0)) <= 0) {
 						//error or connection closed
-						if(nbytes == 0)
-						{
+						if(nbytes == 0) {
 							cout << argv[0] << ": socket " << i << " hung up" << endl;
 						}
-						else
-						{
+						else {
 							cout << "Bridge recv() error..." << endl;
 						}
 
@@ -309,20 +300,8 @@ int main (int argc, char *argv[])
 						FD_CLR(i, &master);
 
 					}
-					else
-					{	
+					else {	
 						PacketQ pkt;
-						
-					/*	
-						// If the port isn't in the self-learn table, then add it
-						if(selfLearnTable.find(peerAddr.sin_port) == selfLearnTable.end()) {
-							MacTableEntry entry;
-							// &buf[6] should refer to the MacAddr src field of Ethernet Pkt
-							memcpy(&(entry.mac), &buf[6], 6);
-							gettimeofday(&entry.timeStamp, NULL);
-							selfLearnTable.insert(pair<unsigned long, MacTableEntry>(peerAddr.sin_port, entry));
-						}
-					*/
 					
 						//Cout for testing that we are receiving packets correctly
 						cout << "nbytes: " << nbytes << endl;
@@ -404,7 +383,7 @@ int main (int argc, char *argv[])
 							}
 						}
 						
-						recPackets.push(pkt);
+						recPackets.push_back(pkt);
 
 					}
 				}
