@@ -267,30 +267,30 @@ void Station::constructArpRequest(IPAddr dstip)
 void Station::constructArpReply(ARP_PKT general)
 {
 cout << __func__ << __LINE__ << endl;
-	ARP_PKT pkt;
+	ARP_PKT arpPkt;
 
-	pkt.op = 1;
+	arpPkt.op = 1;
 
-	pkt.srcip = general.dstip;
+	arpPkt.srcip = general.dstip;
 
-	strcpy(pkt.srcmac, mac().c_str());
+	strcpy(arpPkt.srcmac, mac().c_str());
 	
-	pkt.dstip = general.srcip;
+	arpPkt.dstip = general.srcip;
 cout << __func__ << __LINE__ << endl;
-	strcpy(pkt.dstmac, general.srcmac);
-	pkt.dump();
+	strcpy(arpPkt.dstmac, general.srcmac);
+	arpPkt.dump();
 	
 	EtherPkt ePkt;
 
-	strcpy(ePkt.dst, pkt.dstmac);
-	strcpy(ePkt.src, pkt.srcmac);
+	strcpy(ePkt.dst, arpPkt.dstmac);
+	strcpy(ePkt.src, arpPkt.srcmac);
 	
 	ePkt.type = 0;
 cout << __func__ << __LINE__ << endl;
-	vector<unsigned char> arpBytes = writeArpPktToBytes(pkt);
+	vector<unsigned char> arpBytes = writeArpPktToBytes(arpPkt);
 
 	ePkt.size = arpBytes.size();
-	memcpy(&ePkt.data, &arpPkt[0], arpBytes.size());
+	memcpy(&ePkt.data, &arpBytes[0], arpBytes.size());
 cout << __func__ << __LINE__ << endl;
 	ePkt.dump();
 cout << __func__ << __LINE__ << endl;
