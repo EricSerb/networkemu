@@ -348,11 +348,11 @@ int main (int argc, char *argv[])
 						type.clear();
 						//this gets the packet type
 						type.assign(buffer, 36, 2);
-						pkt.packetType = atoi(type.c_str());
+						short packetType = atoi(type.c_str());
 						type.clear();
 						
 						//Now we will get the arp type if packet type is arp
-						if(pkt.packetType == TYPE_ARP_PKT)
+						if(packetType == TYPE_ARP_PKT)
 						{
 							//Will set arpType to request or reply
 							type.assign(buffer, ETHPKTHEADER, 2);
