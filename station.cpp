@@ -287,10 +287,10 @@ cout << __func__ << __LINE__ << endl;
 	
 	ePkt.type = 0;
 cout << __func__ << __LINE__ << endl;
-	vector<unsigned char> arpPkt = writeArpPktToBytes(pkt);
+	vector<unsigned char> arpBytes = writeArpPktToBytes(pkt);
 
-	ePkt.size = arpPkt.size();
-	memcpy(&(ePkt.data), &(arpPkt), ePkt.size);
+	ePkt.size = arpBytes.size();
+	memcpy(&ePkt.data, &arpPkt[0], arpBytes.size());
 cout << __func__ << __LINE__ << endl;
 	ePkt.dump();
 cout << __func__ << __LINE__ << endl;
