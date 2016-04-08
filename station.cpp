@@ -35,7 +35,9 @@ void Station::handlePacket(char inputBuffer[BUFSIZE])
 	// The packet will come to us as an EtherPkt.  Determine if the EtherPkt is wrapping
 	// an IP packet or ARP pkt
 	EtherPkt etherPkt = writeBytesToEtherPacket(inputBuffer);
+	cout << __LINE__ << endl;
 	etherPkt.dump();
+	cout << __LINE__ << endl;
 	
 	// If we have received an ARP Packet, we need to know if it is a request or a reply
 	if(etherPkt.type == TYPE_ARP_PKT) {
@@ -64,6 +66,8 @@ void Station::handlePacket(char inputBuffer[BUFSIZE])
 			// TODO: consult routing table and forward
 		}
 	}
+	
+	cout << __LINE__ << endl;
 }
 
 /**
@@ -205,6 +209,7 @@ void Station::sendPendingPackets()
 				buf[i] = 0;
 		
 		memcpy(&buf, &m_pendingQueue[i][0], m_pendingQueue[i].size());
+cout << "ATTEMPTING A SEND ON LINE " << __LINE__ << " WITH BUFFER: " << buf << endl;
 		if(send(socket(), buf, sizeof(buf), 0) == -1) {
 			cout << "Could not send m_pendingQueue[" << i << "]: " << &m_pendingQueue[i] << endl;
 			cout << "buf: " << buf << endl;

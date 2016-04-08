@@ -112,7 +112,7 @@ EtherPkt writeBytesToEtherPacket(char *buffer)
 	etherPkt.type = atoi(type);
 	etherPkt.size = atoi(size);
 	
-	for(int i = 0; i < ETHERBUFSIZE; ++i)
+	for(int i = 0; i < ETHBUFSIZE; ++i)
 		etherPkt.data[i] = buffer[currentByte++];
 	
 	return etherPkt;
