@@ -14,6 +14,6 @@ public:
 	IPAddr dstip;
 	MacAddr dstmac;
 	
-};
+}__attribute__((packed));
 
 #endif

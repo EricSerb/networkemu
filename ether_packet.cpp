@@ -14,7 +14,7 @@ EtherPkt::EtherPkt()
 		src[i] = 0;
 	strcpy(src, "00:00:00:00:00:00");
 	
-	type = TYPE_IP_PKT;
+	type = -1;
 
 	size = 0;
 	

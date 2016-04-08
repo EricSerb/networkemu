@@ -31,6 +31,7 @@ std::vector< unsigned char > writeEthernetPacketToBytes(EtherPkt pkt)
 	
 	// Size is also a short and must be read byte by byte.
 	string size = to_string((int)pkt.size);
+
 	// TODO: pkt.size represents how full a data buffer is.  This could be
 	// 1 - 4 digits long (max of 1024), so for all size strings less than 4 characters,
 	// maybe we should pad it up to 4 characters (precede the size with 0's).  That way,
@@ -96,32 +97,42 @@ EtherPkt writeBytesToEtherPacket(char *buffer)
 	memcpy(etherPkt.data, &buffer[40], BUFSIZE-ETHPKTHEADER); */
 	
 	int currentByte = 0;
+	cout << __func__ << " copying buffer: " << buffer << endl;
 	cout << "etherPkt.dst before copy: " << etherPkt.dst << endl;
-	for(unsigned int i = 0; i < sizeof(MacAddr); ++i)
-		etherPkt.dst[i] = buffer[currentByte++];
+	for(unsigned int i = 0; i < sizeof(MacAddr) -1 ; ++i, ++currentByte) {
+		cout << i << endl;
+		etherPkt.dst[i] = buffer[currentByte];
+	}
 	cout << "etherPkt.dst after copy: " << etherPkt.dst << endl;
 	
 	cout << "etherPkt.src before copy: " << etherPkt.src << endl;
-	for(unsigned int i = 0; i < sizeof(MacAddr); ++i)
-		etherPkt.src[i] = buffer[currentByte++];
+	for(unsigned int i = 0; i < sizeof(MacAddr) -1 ; ++i, ++currentByte)
+		etherPkt.src[i] = buffer[currentByte];
 	cout << "etherPkt.src after copy: " << etherPkt.src << endl;
 	
 	cout << "etherPkt.type before copy: " << etherPkt.type << endl;
-	char type[2], size[2];
-	for(unsigned int i = 0; i < sizeof(short); ++i)
-		type[i] = buffer[currentByte++];
+	
+	memcpy(&etherPkt.type, (short*)&buffer[currentByte], 1);
+	//char type[2], size[2];
+	//for(unsigned int i = 0; i < sizeof(short); ++i, ++currentByte)
+		//type[i] = buffer[currentByte];
+	//etherPkt.type = (short) atoi(type);
+	currentByte += 2;
 	cout << "etherPkt.type after copy: " << etherPkt.type << endl;
 	
 	cout << "etherPkt.size before copy: " << etherPkt.size << endl;
-	for(unsigned int i = 0; i < sizeof(short); ++i)
-		size[i] = buffer[currentByte++];
+	memcpy(&etherPkt.size, (short*)&buffer[currentByte], 1);
+	currentByte += 2;
+	//for(unsigned int i = 0; i < sizeof(short); ++i, ++currentByte)
+		//size[i] = buffer[currentByte];
+	//etherPkt.size = (short) atoi(size);
+
+	cout << "arp packet size: " << sizeof(ARP_PKT) << endl;
 	cout << "etherPkt.size after copy: " << etherPkt.size << endl;
-	etherPkt.type = atoi(type);
-	etherPkt.size = atoi(size);
 	
 	cout << "etherPkt.buf before copy: " << etherPkt.data << endl;
-	for(int i = 0; i < ETHBUFSIZE; ++i)
-		etherPkt.data[i] = buffer[currentByte++];
+	for(int i = 0; i < ETHBUFSIZE; ++i, ++currentByte)
+		etherPkt.data[i] = buffer[currentByte];
 	cout << "etherPkt.buf after copy: " << etherPkt.data << endl;
 	
 	return etherPkt;

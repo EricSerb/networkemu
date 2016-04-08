@@ -80,12 +80,12 @@ int main (int argc, char *argv[])
 			
 			char buf[BUFSIZE];
 			for(unsigned int j = 0; j < sizeof(buf); ++j)
-				buf[i] = 0;
+				buf[j] = 0;
 
 			if (FD_ISSET(i, &readSet)) {
 				if(i == station.socket()) {
 					// If no bytes are read, something is wrong.  Exit.
-					if((bytesRead = recv(i, buf, sizeof buf, 0)) <= 0) {
+					if((bytesRead = recv(i, buf, sizeof(buf), 0)) <= 0) {
 						cout << "recv error in select() loop" << endl;
 						return 1;
 					}
@@ -95,9 +95,10 @@ int main (int argc, char *argv[])
 				}
 				
 				else if(!station.router() && i == fileno(stdin)) {
-					bytesRead = read(i, buf, sizeof buf);
+					bytesRead = read(i, buf, sizeof(buf));
 
 					if(bytesRead > 0) {
+						cout << "before calling handleUserInput(), our buf is: " << buf << endl;
 						station.handleUserInput(buf);
 					}
 				}
