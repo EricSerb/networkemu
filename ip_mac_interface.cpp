@@ -4,6 +4,25 @@
 
 using namespace std;
 
+signed short ByteToShort(unsigned char* bytes){
+
+    signed short result = 0;
+    result = (result<<8) + bytes[1]; // heigh byte
+    result = (result<<8) + bytes[0]; // low byte
+    return result;
+}
+
+void ShortToByte(signed short num, unsigned char* bytes){
+
+    bytes[1] = num & 0xFF00; // heigh byte
+    bytes[0] = num & 0x00FF; // low byte
+}
+
+short toShort(const char* bytes) {
+    return (short)(((unsigned char)bytes[1] << 8) |
+                   (unsigned char)bytes[0]);
+}
+
 /**
  * Deconstruct an EtherPkt and write it to a byte vector, which is
  * used so that we can write an EtherPkt byte by byte across the wire
@@ -24,21 +43,43 @@ std::vector< unsigned char > writeEthernetPacketToBytes(EtherPkt pkt)
 	
 	// Add the type.  We cannot directly add the bytes of a short to the vector,
 	// so cast it to a string first
-	string type = to_string((int)pkt.type);
+	//string type = to_string((int)pkt.type);
 	
-	for(unsigned int i = 0; i < type.length(); ++i)
-		bytes.push_back(type[i]);
+	//for(unsigned int i = 0; i < type.length(); ++i)
+		//bytes.push_back(type[i]);
+	unsigned char* typeBytes = new unsigned char[2];
+	cout << "pkt type: " << pkt.type << endl;
+	ShortToByte(pkt.type, typeBytes);
+	short res = ByteToShort(typeBytes);
+	
+	//short res = toShort(b);
+	cout << "the res is: " << res << endl;
+	
+	for(unsigned int i = 0; i < sizeof(typeBytes); ++i)
+		bytes.push_back(typeBytes[i]);
+	
+	unsigned char* sizeBytes = new unsigned char[2];
+	cout << "pkt size: " << pkt.size << endl;
+	ShortToByte(pkt.size, sizeBytes);
+	short resu = ByteToShort(sizeBytes);
+	
+	//short res = toShort(b);
+	cout << "the resu is: " << resu << endl;
+	
+	for(unsigned int i = 0; i < sizeof(sizeBytes); ++i)
+		bytes.push_back(sizeBytes[i]);
+
 	
 	// Size is also a short and must be read byte by byte.
-	string size = to_string((int)pkt.size);
+	//string size = to_string((int)pkt.size);
 
 	// TODO: pkt.size represents how full a data buffer is.  This could be
 	// 1 - 4 digits long (max of 1024), so for all size strings less than 4 characters,
 	// maybe we should pad it up to 4 characters (precede the size with 0's).  That way,
 	// we can just extract 4 characters on the receivers end.  This lets us know where the 'size'
 	// field ends and where the data buffer begins
-	for(unsigned int i = 0; i < size.length(); ++i)
-		bytes.push_back(size[i]);
+	//for(unsigned int i = 0; i < size.length(); ++i)
+		//bytes.push_back(size[i]);
 	
 	// Add the data (which is any valid string that is terminated by \0)
 	for(unsigned int i = 0; i < sizeof(pkt.data); ++i) {
@@ -47,7 +88,7 @@ std::vector< unsigned char > writeEthernetPacketToBytes(EtherPkt pkt)
 		
 		bytes.push_back(pkt.data[i]);
 	}
-	
+	cout << "out bytes are: " << &bytes[0] << endl;
 	return bytes;
 }
 
@@ -112,20 +153,20 @@ EtherPkt writeBytesToEtherPacket(char *buffer)
 	
 	cout << "etherPkt.type before copy: " << etherPkt.type << endl;
 	
-	memcpy(&etherPkt.type, (short*)&buffer[currentByte], 1);
-	//char type[2], size[2];
-	//for(unsigned int i = 0; i < sizeof(short); ++i, ++currentByte)
-		//type[i] = buffer[currentByte];
-	//etherPkt.type = (short) atoi(type);
-	currentByte += 2;
+	//memcpy(&etherPkt.type, (short*)&buffer[currentByte], 1);
+	char type[2], size[2];
+	for(unsigned int i = 0; i < sizeof(type); ++i, ++currentByte)
+		type[i] = buffer[currentByte];
+	etherPkt.type = toShort(type);
+
 	cout << "etherPkt.type after copy: " << etherPkt.type << endl;
 	
 	cout << "etherPkt.size before copy: " << etherPkt.size << endl;
-	memcpy(&etherPkt.size, (short*)&buffer[currentByte], 1);
-	currentByte += 2;
-	//for(unsigned int i = 0; i < sizeof(short); ++i, ++currentByte)
-		//size[i] = buffer[currentByte];
-	//etherPkt.size = (short) atoi(size);
+	//memcpy(&etherPkt.size, (short*)&buffer[currentByte], 1);
+	for(unsigned int i = 0; i < sizeof(size); ++i, ++currentByte)
+		size[i] = buffer[currentByte];
+	etherPkt.size = toShort(size);
+
 
 	cout << "arp packet size: " << sizeof(ARP_PKT) << endl;
 	cout << "etherPkt.size after copy: " << etherPkt.size << endl;
@@ -187,8 +228,8 @@ ARP_PKT writeBytesToArpPkt(char* buffer)
 	// get the op out
 	//memcpy(&(pkt.op), &(buffer[0]), 2);
 	//get op out of buf to another string then atoi
-	char op[2];
-	for(j = 0; j < 2; i++, j++)
+	char op[1];
+	for(j = 0; j < sizeof(op); i++, j++)
 		op[j] = buffer[i];
 	pkt.op = atoi(op);
 	//get the src ip
