@@ -89,29 +89,14 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 	
 	cout << "line: " << line << endl << "command: " << command << endl;
 	
-	if(command == "send")
-	{
-		//parse pkt into a buf
-		string cmd, dstHost, data, newBuf(inputBuffer);
-
-		std::size_t i = newBuf.find(" ", 0);
+	if(command == "send") {
+		string dstHost;
+		linestream >> dstHost;
+		cout << "dstHost: " << dstHost << endl;
 		
-		//found lenght of command and then copy it out. should be 4 characters
-		cmd = newBuf.substr(0, i); 
-		i++;
-
-		cout << "cmd: " << cmd << endl;
-		//Now from position of i+1 should be start of host name and find end position of that
-		std::size_t k = newBuf.find(" ", i);
-
-		//copy out host name. Do k-i because that is the length we need to copy
-		dstHost = newBuf.substr(i, (k - i));
-		k++; //move k to start of data
-		
-		//get data out and now have everything extracted
-		data = newBuf.substr(k, (newBuf.length() - k));
-		
-		cout << "dstHost: " << dstHost << endl << "data: " << data << endl;
+		string data;
+		getline(linestream, data);
+		cout << "data: " << data << endl;
 		
 		// First, construct an IP packet.  This will be encapsulated in an EtherPkt,
 		// which will need to handle finding the destination MAC address
@@ -126,7 +111,8 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 		
 		ipPkt.length = sizeof(ipPkt.data);
 		
-		//ipPkt.dump();
+		cout << __func__ << " " << __LINE__ << endl;
+		ipPkt.dump();
 		
 		// Now, construct the ethernet packet and lookup the destination mac address
 		EtherPkt etherPkt;
@@ -140,7 +126,8 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 		
 		etherPkt.size = ipBytes.size();
 		
-		//etherPkt.dump();
+		cout << __func__ << " " << __LINE__ << endl;
+		etherPkt.dump();
 		
 		// Lookup mac address in ARP cache for destination.  If we can't find it, then store the packet in a queue
 		// of packets waiting on ARP replies and send out an ARP request.
