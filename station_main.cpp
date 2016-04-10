@@ -58,7 +58,7 @@ int main (int argc, char *argv[])
 	// If we can't connect to a bridge, then we exit.  Otherwise, keep track of
 	// the socket and keep going.
 	vector<int> fds = station.sockets();
-	if(fds.size()) {
+	if(fds.size() == 0) {
 		cout << "Could not connect to any bridges.  Exiting." << endl;
 		return 1;
 	}
