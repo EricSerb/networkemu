@@ -27,7 +27,7 @@ Station::Station(bool routerFlag, string ifaceFile, string rtableFile, string ho
  * TODO: if we're a router, consult the routing table to figure out where the packet should go,
  * 	then set it up to be forwarded properly and add it to the pending queue
  */
-void Station::handlePacket(char inputBuffer[BUFSIZE])
+void Station::handlePacket(char inputBuffer[BUFSIZE], int incomingFd)
 {
 	cout << "handlePacket input buffer: " << inputBuffer << endl;
 	// The packet will come to us as an EtherPkt.  Determine if the EtherPkt is wrapping
@@ -57,6 +57,7 @@ cout << __func__ << __LINE__ << endl;
 	}
 	else if(etherPkt.type == TYPE_IP_PKT) {
 		IP_PKT ipPkt = writeBytesToIpPkt(etherPkt.data);
+
 		// If we are not a router, display the data buffer.  
 		// If we are a router, forward the packet
 		if(!router())
@@ -66,6 +67,10 @@ cout << __func__ << __LINE__ << endl;
 			for(unsigned int i = 0; i < m_rTableEntries.size(); ++i) {
 				if(m_rTableEntries[i].destsubnet == ipPkt.dstip) {
 					// Found it!  Get the next hop and send the packet that way
+					pqMap pktToSend;
+					pktToSend.fd = fdLookup.find(m_rTableEntries[i].destsubnet)->second;
+					strcpy(pktToSend.buffer, inputBuffer);
+					m_pendingQueue.push_back(pktToSend);
 				}
 			}
 			

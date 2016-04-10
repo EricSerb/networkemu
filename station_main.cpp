@@ -93,7 +93,7 @@ int main (int argc, char *argv[])
 					}
 					cout << "received packet from bridge (socket " << i << ") with bytesRead: " << bytesRead << " and buf: " << buf << endl;
 					
-					station.handlePacket(buf);
+					station.handlePacket(buf, i);
 				}
 				
 				else if(!station.router() && i == fileno(stdin)) {
