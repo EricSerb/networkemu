@@ -295,7 +295,40 @@ ARP_PKT writeBytesToArpPkt(char* buffer)
 
 IP_PKT writeBytesToIpPkt(char *buffer)
 {
-	IP_PKT pkt;
+	/*
+	IP_PKT ipPkt;
+	cout << __func__ << " " << __LINE__ << endl;
+	cout << "buffer: " << buffer << endl;
+	
+	int currentByte = 0;
+	
+	char dstIp[sizeof(IPAddr) + 1];
+	for(unsigned int i = 0; i < sizeof(dstIp); ++i)
+		dstIp[i] = 0;
+	
+	for(unsigned int i = 0; i < sizeof(dstIp); ++i)
+		dstIp[i] = buffer[currentByte++];
+	
+	cout << "dstIP: " << dstIp << endl;
+	ipPkt.dstip = atoi(dstIp);
+	cout << "buffer now: " << &buffer[currentByte] << endl;
+	
+	char srcIp[sizeof(IPAddr) + 1];
+	for(unsigned int i = 0; i < sizeof(srcIp); ++i)
+		srcIp[i] = 0;
+	
+	for(unsigned int i = 0; i < sizeof(srcIp); ++i)
+		srcIp[i] = buffer[currentByte++];
+	
+	cout << "srcIP: " << srcIp << endl;
+	ipPkt.srcip = atoi(srcIp);
+	
+	cout << "src ip: " << ipPkt.srcip << " and ntop(): " << ntop(ipPkt.srcip) << endl;
+	cout << "buffer now: " << &buffer[currentByte] << endl;
+	
+	return ipPkt;
+	*/
+	
 	int i = 0, j = 0;
 	
 	//memcpy areas of buffer to form the ip packet that was just sent to us
@@ -307,6 +340,7 @@ IP_PKT writeBytesToIpPkt(char *buffer)
 	
 	//memcpy((pkt.data), &(buffer[16]), pkt.length);
 	
+	IP_PKT pkt;
 	char ip[4];
 	for(j = 0; j < 4; i++, j++)
 		ip[j] = buffer[i];
@@ -323,6 +357,7 @@ IP_PKT writeBytesToIpPkt(char *buffer)
 	
 	for(int i = 16, j = 0; i < pkt.length; i++, j++)
 		pkt.data[j] = buffer[i];
+	
 	
 	return pkt;
 }
