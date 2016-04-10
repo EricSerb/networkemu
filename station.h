@@ -54,7 +54,7 @@ private:
 	bool m_router; // Are we a router?
 	
 	// TODO: support more than one fd (i.e., more than one interface)
-	int m_fd; // If we have an open connection, it will be on this fd
+	std::vector<int> m_fd; // If we have open connections, it will be on this fd
 	
 	std::vector<iface> m_ifaces; // All interfaces attached to the station
 	std::vector<rtable> m_rTableEntries; // Entries for the routing table

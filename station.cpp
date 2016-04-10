@@ -14,9 +14,7 @@ Station::Station(bool routerFlag, string ifaceFile, string rtableFile, string ho
 	m_rTableEntries = extractRouteTable(rtableFile);
 	m_hostMap = extractHosts(hostFile);
 	
-	// At construction, we have not connected to anything.  Let's make sure
-	// we set a value that will not conflict with other FDs.
-	m_fd = -1;
+	// No need to initialize m_fd vector.  We will push back values as needed
 }
 
 /**
@@ -50,8 +48,6 @@ cout << __func__ << __LINE__ << endl;
 		// We've received a reply, which means that we can map the dest IP to a dest MAC
 		else if(arpPkt.op == ARP_REPLY) {
 			insertArpCache(arpPkt.dstip, arpPkt.dstmac);
-			// TODO: how will we handle moving the packets that did not have a dest MAC to
-			// the pending queue?
 			moveFromArpWaitToPQ(arpPkt);
 		}
 		else {
@@ -60,13 +56,19 @@ cout << __func__ << __LINE__ << endl;
 		}	
 	}
 	else if(etherPkt.type == TYPE_IP_PKT) {
-		IP_PKT pkt = writeBytesToIpPkt(etherPkt.data);
+		IP_PKT ipPkt = writeBytesToIpPkt(etherPkt.data);
 		// If we are not a router, display the data buffer.  
 		// If we are a router, forward the packet
 		if(!router())
-			cout << pkt.data << endl;
+			cout << ipPkt.data << endl;
 		else {
-			// TODO: consult routing table and forward
+			// We need to find the next hop and forward the packet
+			for(unsigned int i = 0; i < m_rTableEntries.size(); ++i) {
+				if(m_rTableEntries[i].destsubnet == ipPkt.dstip) {
+					// Found it!  Get the next hop and send the packet that way
+				}
+			}
+			
 		}
 	}
 	
