@@ -503,14 +503,14 @@ CacheEntry Station::lookupArpCache(IPAddr ip)
 	return it->second;
 }
 
-void Station::moveFromArpWaitToPQ(arpPkt)
+void Station::moveFromArpWaitToPQ(ARP_PKT arpPkt)
 {
-	for(int i = 0; i < m_arpWaitQueue.size(); i++)
+	for(unsigned int i = 0; i < m_arpWaitQueue.size(); i++)
 	{
-		if(m_arpWaitQueue[i].srcip == arpPkt.dstip)
+		if(strcmp(m_arpWaitQueue[i].src, arpPkt.dstmac) == 0)
 		{
 			EtherPkt movingPkt = m_arpWaitQueue[i];
-			strcpy(movingPkt.dst, arpPkt.srcmac)
+			strcpy(movingPkt.dst, arpPkt.srcmac);
 			m_pendingQueue.push_back(writeEthernetPacketToBytes(movingPkt));
 			m_arpWaitQueue.erase(m_arpWaitQueue.begin()+i);
 		}
