@@ -224,8 +224,7 @@ int main (int argc, char *argv[])
 				}
 			//we know the next hop just need to send to that port
 			else {
-				if(send(toSend.socketOut, &toSend.buf[0], sizeof(toSend.buf), 0) == -1)
-				{
+				if(send(toSend.socketOut, &toSend.buf[0], sizeof(toSend.buf), 0) == -1) {
 					cout << "Bridge send() error..." << endl;
 				}
 				
@@ -234,40 +233,30 @@ int main (int argc, char *argv[])
 		}
 		timeval timeout;
 		timeout.tv_sec = 0;
-		if(select(fdmax+1, &read_fds, NULL, NULL, &timeout) == -1)
-		{
+		if(select(fdmax+1, &read_fds, NULL, NULL, &timeout) == -1) {
 			cout << "Bridge select() error... CRASH!" << endl;
 			exit(1);
 		}
-		//cout << "Server select() ok..." << endl;
 
 		//check existing connections for anything to read
-		for(int i = 0; i <= fdmax; i++)
-		{
-			if(FD_ISSET(i, &read_fds))
-			{
-				if(i == listener)
-				{
+		for(int i = 0; i <= fdmax; i++) {
+			if(FD_ISSET(i, &read_fds)) {
+				if(i == listener) {
 					//handle new connections
 					addrlen = sizeof(caddr);
-					if((newfd = accept(listener, (struct sockaddr *)&caddr, (socklen_t *) &addrlen)) == -1)
-					{
+					if((newfd = accept(listener, (struct sockaddr *)&caddr, (socklen_t *) &addrlen)) == -1) {
 						cout << "Bridge accpet() error...." << endl;
 					}
-					else
-					{
-						if(portCount >= numPorts)
-						{
+					else {
+						if(portCount >= numPorts) {
 							strcpy(buf, "Reject");
 							nbytes = 7;
 							send(newfd, buf, nbytes, 0);
 						}
-						else
-						{
+						else {
 							FD_SET(newfd, &master); //adding to master set
 							portCount++; //increase port count to keep track of number of ports in use
-							if(newfd > fdmax)
-							{
+							if(newfd > fdmax) {
 								fdmax = newfd;
 							}
 
@@ -311,7 +300,7 @@ int main (int argc, char *argv[])
 						buffer.assign(buf);
 						cout << "buffer: " << buffer << endl;
 						string src;
-						src.assign(buffer, 18, 18);
+						src.assign(buffer, 18, 17);
 						//cout << "src: " << src << endl;
 						//memcpy(&src, &buf[17], 17);
 						
@@ -331,8 +320,7 @@ int main (int argc, char *argv[])
 						type.clear();
 						
 						//Now we will get the arp type if packet type is arp
-						if(packetType == TYPE_ARP_PKT)
-						{
+						if(packetType == TYPE_ARP_PKT) {
 							//Will set arpType to request or reply
 							type.assign(buffer, ETHPKTHEADER, 2);
 							pkt.arpType = atoi(type.c_str());
@@ -342,8 +330,7 @@ int main (int argc, char *argv[])
 						
 						
 						//If the MacAddr is not in the self-learn table, then add it
-						if(selfLearnTable.find(src) == selfLearnTable.end())
-						{
+						if(selfLearnTable.find(src) == selfLearnTable.end()) {
 							cout << "Adding " << src << " to self learn table" << endl;
 							//Create the MacTableEntry to hold the port and timeStamp
 							MacTableEntry entry;
@@ -357,20 +344,9 @@ int main (int argc, char *argv[])
 							gettimeofday(&it->second.timeStamp, NULL);
 						}
 
-#if false
-						cout << "*******Testing the self learn table*******" << endl;
-						for(auto &it : selfLearnTable)
-						{
-							cout << "Mac == " << it.first << endl;
-							cout << "Port == " << it.second.socket << endl;
-							cout << "Timestamp == " << it.second.timeStamp.tv_sec << endl << endl;
-						}
-						cout << "*******End self learn table testing*******" << endl;
-#endif
 						// Lookup destination mac address in self learn table to see if port is known
 						string dest;
 						dest.assign(buffer, 0, 17);
-						//memcpy(&dest, &buf[17], 17);
 						
 						// If the destination is in the self learn  table, make sure the PacketQ known
 						// value gets set to true, so that we do not broadcast it
