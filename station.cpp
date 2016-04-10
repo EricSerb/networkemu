@@ -516,3 +516,16 @@ void Station::moveFromArpWaitToPQ(ARP_PKT arpPkt)
 		}
 	}
 }
+
+void Station::arpCacheTimeout()
+{
+	timeval currentTime;
+	gettimeofday(&currentTime, NULL);
+	
+	for(auto &it : m_arpCache) {
+			if((currentTime.tv_sec - it.second.timeStamp.tv_sec) > 30) {
+				cout << "Removing " << it.second.mac << " from arpCache" << endl;
+				m_arpCache.erase(it.first);
+			}
+		}
+}
