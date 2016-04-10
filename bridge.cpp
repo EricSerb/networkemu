@@ -300,7 +300,7 @@ int main (int argc, char *argv[])
 						buffer.assign(buf);
 						cout << "buffer: " << buffer << endl;
 						string src;
-						src.assign(buffer, 18, 17);
+						src.assign(buffer, 17, 17);
 						//cout << "src: " << src << endl;
 						//memcpy(&src, &buf[17], 17);
 						
