@@ -334,7 +334,7 @@ IP_PKT writeBytesToIpPkt(char *buffer)
 	cout << __func__ << " " << __LINE__ << " length: " << length<< endl;
 	ipPkt.length = atoi(length);
 	
-	cout << "ip length: " << ipPkt.length << endl;
+	cout << "ip length: " << ipPkt.length << " and size of IP pkt: " << sizeof(IP_PKT) << endl;
 	cout << "buffer now: " << &buffer[currentByte] << endl;
 	
 	for(int i = 0; i < IPBUFSIZE; ++i, ++currentByte)

@@ -17,7 +17,9 @@
 #define TYPE_IP_PKT 1
 #define TYPE_ARP_PKT 0
 
-#define BUFSIZE 1024
+//TODO: need to make this program work for large bufsizes. see how shorts are handled
+// in ip_mac_interface toByte and fromByte functions for a description of the problem
+#define BUFSIZE 100
 #define ETHPKTHEADER 40
 #define IPPKTHEADER 10
 
