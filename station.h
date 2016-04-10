@@ -23,10 +23,9 @@ public:
 	
 	bool router();
 	
-	int socket();
+	std::vector<int> sockets();
+	bool isSocket(int fd);
 	void connectToBridge();
-	void close();
-	bool closed();
 	
 	void sendPendingPackets();
 	
