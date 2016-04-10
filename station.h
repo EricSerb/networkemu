@@ -34,7 +34,7 @@ public:
 	std::string mac();
 	
 	void handleUserInput(char inputBuffer[BUFSIZE]);
-	void handlePacket(char inputBuffer[BUFSIZE]);
+	void handlePacket(char inputBuffer[BUFSIZE], int incomingFd);
 	
 	void moveFromArpWaitToPQ(ARP_PKT arpPkt);
 	
@@ -56,7 +56,7 @@ private:
 	bool m_router; // Are we a router?
 	
 	// TODO: support more than one fd (i.e., more than one interface)
-	std::vector<int> m_fd; // If we have open connections, it will be on this fd
+	int m_fd; // If we have an open connection, it will be on this fd
 	
 	std::vector<iface> m_ifaces; // All interfaces attached to the station
 	std::vector<rtable> m_rTableEntries; // Entries for the routing table
@@ -64,6 +64,7 @@ private:
 	std::vector<std::vector<unsigned char > > m_pendingQueue; // packets waiting to be sent out with KNOWN dest mac
 	std::vector<EtherPkt> m_arpWaitQueue; // packets that can't be sent out until we know dest mac
 	std::map<IPAddr, CacheEntry> m_arpCache; // map of IP address to to MAC address/time stamp
+	std::map<IPAddr, int> m_fdLookup //map of IPAddr to fd to use for routing table
 	
 };
 
