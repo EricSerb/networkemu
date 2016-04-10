@@ -202,7 +202,8 @@ void Station::sendPendingPackets()
 		
 		memcpy(&buf, &m_pendingQueue[i][0], m_pendingQueue[i].size());
 cout << "ATTEMPTING A SEND ON LINE " << __LINE__ << " WITH BUFFER: " << buf << endl;
-		if(send(socket(), buf, sizeof(buf), 0) == -1) {
+// TODO:  should send to the PROPER fd.  Pending queue should hold destination fd and buffer
+		if(send(m_fd[0], buf, sizeof(buf), 0) == -1) {
 			cout << "Could not send m_pendingQueue[" << i << "]: " << &m_pendingQueue[i] << endl;
 			cout << "buf: " << buf << endl;
 		}
@@ -294,26 +295,19 @@ bool Station::router()
 	return m_router;
 }
 
-int Station::socket()
+vector<int> Station::sockets()
 {
 	return m_fd;
 }
-
-/*
- * Determine whether or not a socket is closed.  Intended to be used for checks
- * against m_fd, where socket() is intended for assignments.
- */
-bool Station::closed()
+// Check to see if a given fd is in our station's set of fds
+bool Station::isSocket(int fd)
 {
-	return socket() == -1;
-}
-
-
-void Station::close()
-{
-	if(!closed())
-		::close(m_fd);
-	m_fd = -1;
+	for(unsigned int i = 0; i < m_fd.size(); ++i) {
+		if(fd == m_fd[i])
+			return true;
+	}
+		
+	return false;
 }
 
 /**
@@ -412,68 +406,71 @@ void Station::connectToBridge()
 		return;
 	
 	//TODO:  support more than just one connection (try one per interface)
-	string bridgeName(m_ifaces[0].lanname);
-	
-	string bridgeFile = bridgeName + ".info";
-	
-	ifstream infile(bridgeFile.c_str());
-	
-	if(!infile.is_open()) {
-		cout << "Error opening " << bridgeFile << " ...skipping this bridge." << endl;
-		return;
-	}
-	
-	string line;
-	
-	getline(infile, line);
-	stringstream linestream(line);
-	
-	string addr;
-	string port;
-	
-	linestream >> addr >> port;
-	
-	struct addrinfo *res;
-	
-	struct addrinfo hints;
-	memset(&hints, 0, sizeof hints);
+	for(unsigned int i = 0; i < m_ifaces.size(); ++i) {
+		string bridgeName(m_ifaces[i].lanname);
+		
+		string bridgeFile = bridgeName + ".info";
+		
+		ifstream infile(bridgeFile.c_str());
+		
+		if(!infile.is_open()) {
+			cout << "Error opening " << bridgeFile << " ...skipping this bridge." << endl;
+			return;
+		}
+		
+		string line;
+		
+		getline(infile, line);
+		stringstream linestream(line);
+		
+		string addr;
+		string port;
+		
+		linestream >> addr >> port;
+		
+		struct addrinfo *res;
+		
+		struct addrinfo hints;
+		memset(&hints, 0, sizeof hints);
 
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
-	
-	getaddrinfo(addr.c_str(), port.c_str(), &hints, &res);
-	
-	m_fd = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+		hints.ai_family = AF_INET;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_flags = AI_PASSIVE;
+		
+		getaddrinfo(addr.c_str(), port.c_str(), &hints, &res);
+		int fd = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
-	if(connect(m_fd, res->ai_addr, res->ai_addrlen) < 0) {
-		perror("connect()");
-		return;
-	}
-	
-	cout << "Connected to " << addr << endl;
-	
-	// We must listen for an "accept" or "reject" string from the bridge
-	int bytesRead = 0;
-	char buf[BUFSIZE];
-	if((bytesRead = recv(m_fd, buf, sizeof buf, 0)) <= 0) {
-		cout << "recv error while listening for accept/reject" << endl;
-		return;
-	}
+		if(connect(fd, res->ai_addr, res->ai_addrlen) < 0) {
+			perror("connect()");
+			return;
+		}
+		
+		cout << "Connected to " << addr << endl;
+		
+		// We must listen for an "accept" or "reject" string from the bridge
+		int bytesRead = 0;
+		char buf[BUFSIZE];
 
-	if(strcmp(buf, "Reject") == 0) {
-		cout << addr << " rejected our connection!" << endl;
-		close();
-		return;
-	}
-	else if (strcmp(buf, "Accept") == 0) {
-		cout << addr << " accepted our connection!" << endl;
-	}
-	//TODO:  try to connect 5 times, then give up (as per writeup)
-	else  {
-		cout << "Not sure what " << addr << " had to say about connecting to us.  Skipping it." << endl;
-		close();
-		return;
+		if((bytesRead = recv(fd, buf, sizeof buf, 0)) <= 0) {
+			cout << "recv error while listening for accept/reject" << endl;
+			return;
+		}
+
+		if(strcmp(buf, "Reject") == 0) {
+			cout << addr << " rejected our connection!" << endl;
+			close(fd);
+			return;
+		}
+		else if (strcmp(buf, "Accept") == 0) {
+			cout << addr << " accepted our connection!" << endl;
+			m_fd.push_back(fd);
+		}
+		//TODO:  try to connect 5 times, then give up (as per writeup)
+		else  {
+			cout << "Not sure what " << addr << " had to say about connecting to us.  Skipping it." << endl;
+			close(fd);
+			return;
+		}
 	}
 
 }

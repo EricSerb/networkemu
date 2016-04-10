@@ -57,16 +57,17 @@ int main (int argc, char *argv[])
 	
 	// If we can't connect to a bridge, then we exit.  Otherwise, keep track of
 	// the socket and keep going.
-	if(station.closed()) {
+	vector<int> fds = station.sockets();
+	if(fds.size()) {
 		cout << "Could not connect to any bridges.  Exiting." << endl;
 		return 1;
 	}
-		
-	FD_SET(station.socket(), &masterSet);
 	
-	// Redundant check; station.socket() should ALWAYS be greater than maxFd by this point
-	if(station.socket() > maxFd)
-		maxFd = station.socket();
+	for(unsigned int i = 0; i < fds.size(); ++i) {
+		FD_SET(fds[i], &masterSet);
+		if(fds[i] > maxFd)
+			maxFd = fds[i];
+	}
 	
 	while(true) {
 		fd_set readSet = masterSet;
@@ -84,7 +85,7 @@ int main (int argc, char *argv[])
 				buf[j] = 0;
 
 			if (FD_ISSET(i, &readSet)) {
-				if(i == station.socket()) {
+				if(station.isSocket(i)) {
 					// If no bytes are read, something is wrong.  Exit.
 					if((bytesRead = recv(i, buf, sizeof(buf), 0)) <= 0) {
 						cout << "recv error in select() loop" << endl;
