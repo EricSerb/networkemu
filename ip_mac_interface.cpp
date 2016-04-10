@@ -1,6 +1,7 @@
 #include "ip_mac_interface.h"
 #include <iostream>
 #include <cstring>
+#include "parser.h"
 
 using namespace std;
 
@@ -18,9 +19,10 @@ void ShortToByte(signed short num, unsigned char* bytes){
     bytes[0] = num & 0x00FF; // low byte
 }
 
-short toShort(const char* bytes) {
-    return (short)(((unsigned char)bytes[1] << 8) |
-                   (unsigned char)bytes[0]);
+short toShort(const char byte) {
+	signed short result = 0;
+	result = (result<<8) + byte; // low byte
+	return result;
 }
 
 /**
@@ -41,13 +43,15 @@ std::vector< unsigned char > writeEthernetPacketToBytes(EtherPkt pkt)
 	for(unsigned int i = 0; i < sizeof(pkt.src) - 1; ++i)
 		bytes.push_back(pkt.src[i]);
 	
+	cout << "out bytes are: " << &bytes[0] << endl;
 	// Add the type.  We cannot directly add the bytes of a short to the vector,
 	// so cast it to a string first
-	//string type = to_string((int)pkt.type);
+	string type = to_string((int)pkt.type);
+	cout << "string type: " << type << " and length " << type.length() << endl;
 	
-	//for(unsigned int i = 0; i < type.length(); ++i)
-		//bytes.push_back(type[i]);
-	unsigned char* typeBytes = new unsigned char[2];
+	for(unsigned int i = 0; i < type.length(); ++i)
+		bytes.push_back(type[i]);
+	/*unsigned char* typeBytes = new unsigned char[3];
 	cout << "pkt type: " << pkt.type << endl;
 	ShortToByte(pkt.type, typeBytes);
 	short res = ByteToShort(typeBytes);
@@ -55,10 +59,10 @@ std::vector< unsigned char > writeEthernetPacketToBytes(EtherPkt pkt)
 	//short res = toShort(b);
 	cout << "the res is: " << res << endl;
 	
-	for(unsigned int i = 0; i < sizeof(typeBytes); ++i)
+	for(unsigned int i = 0; i < sizeof(typeBytes) - 1; ++i)
 		bytes.push_back(typeBytes[i]);
 	
-	unsigned char* sizeBytes = new unsigned char[2];
+	unsigned char* sizeBytes = new unsigned char[3];
 	cout << "pkt size: " << pkt.size << endl;
 	ShortToByte(pkt.size, sizeBytes);
 	short resu = ByteToShort(sizeBytes);
@@ -66,29 +70,34 @@ std::vector< unsigned char > writeEthernetPacketToBytes(EtherPkt pkt)
 	//short res = toShort(b);
 	cout << "the resu is: " << resu << endl;
 	
-	for(unsigned int i = 0; i < sizeof(sizeBytes); ++i)
+	for(unsigned int i = 0; i < sizeof(sizeBytes) - 1; ++i)
 		bytes.push_back(sizeBytes[i]);
-
+	*/
 	
 	// Size is also a short and must be read byte by byte.
-	//string size = to_string((int)pkt.size);
+	cout << "out bytes are: " << &bytes[0] << endl;
+	string size = to_string((int)pkt.size);
+	cout << "size string: " << size << " with length: " << size.length() << endl;
 
 	// TODO: pkt.size represents how full a data buffer is.  This could be
 	// 1 - 4 digits long (max of 1024), so for all size strings less than 4 characters,
 	// maybe we should pad it up to 4 characters (precede the size with 0's).  That way,
 	// we can just extract 4 characters on the receivers end.  This lets us know where the 'size'
 	// field ends and where the data buffer begins
-	//for(unsigned int i = 0; i < size.length(); ++i)
-		//bytes.push_back(size[i]);
-	
+	for(unsigned int i = 0; i < size.length(); ++i)
+		bytes.push_back(size[i]);
+	cout << "out bytes are: " << &bytes[0] << endl;
 	// Add the data (which is any valid string that is terminated by \0)
 	for(unsigned int i = 0; i < sizeof(pkt.data); ++i) {
-		if(pkt.data[i] == '\0')
+		if(pkt.data[i] == 0)
 			break;
 		
 		bytes.push_back(pkt.data[i]);
 	}
 	cout << "out bytes are: " << &bytes[0] << endl;
+	
+	//delete typeBytes;
+	//delete sizeBytes;
 	return bytes;
 }
 
@@ -141,7 +150,6 @@ EtherPkt writeBytesToEtherPacket(char *buffer)
 	cout << __func__ << " copying buffer: " << buffer << endl;
 	cout << "etherPkt.dst before copy: " << etherPkt.dst << endl;
 	for(unsigned int i = 0; i < sizeof(MacAddr) -1 ; ++i, ++currentByte) {
-		cout << i << endl;
 		etherPkt.dst[i] = buffer[currentByte];
 	}
 	cout << "etherPkt.dst after copy: " << etherPkt.dst << endl;
@@ -153,23 +161,29 @@ EtherPkt writeBytesToEtherPacket(char *buffer)
 	
 	cout << "etherPkt.type before copy: " << etherPkt.type << endl;
 	
-	//memcpy(&etherPkt.type, (short*)&buffer[currentByte], 1);
-	char type[2], size[2];
-	for(unsigned int i = 0; i < sizeof(type); ++i, ++currentByte)
-		type[i] = buffer[currentByte];
-	etherPkt.type = toShort(type);
+	unsigned char type = buffer[currentByte++];
+	if(type == '0')
+		etherPkt.type = 0;
+	else if(type == '1')
+		etherPkt.type = 1;
+	else {
+		cout << __func__ << " " << __LINE__ << " ERROR" << endl;
+		exit(1);
+	}
+	char size[3];
 
 	cout << "etherPkt.type after copy: " << etherPkt.type << endl;
 	
 	cout << "etherPkt.size before copy: " << etherPkt.size << endl;
 	//memcpy(&etherPkt.size, (short*)&buffer[currentByte], 1);
-	for(unsigned int i = 0; i < sizeof(size); ++i, ++currentByte)
+	for(unsigned int i = 0; i < sizeof(size) - 1; ++i, ++currentByte)
 		size[i] = buffer[currentByte];
-	etherPkt.size = toShort(size);
+	size[2] = 0;
+	cout << __func__ << " " << __LINE__ << " size: " << size << endl;
+	etherPkt.size = atoi(size);
 
 
-	cout << "arp packet size: " << sizeof(ARP_PKT) << endl;
-	cout << "etherPkt.size after copy: " << etherPkt.size << endl;
+	cout << "arp packet size: " << sizeof(ARP_PKT) << " etherPkt.size after copy: " << etherPkt.size << endl;
 	
 	cout << "etherPkt.buf before copy: " << etherPkt.data << endl;
 	for(int i = 0; i < ETHBUFSIZE; ++i, ++currentByte)
@@ -187,6 +201,7 @@ EtherPkt writeBytesToEtherPacket(char *buffer)
  */
 std::vector<unsigned char> writeArpPktToBytes(ARP_PKT pkt)
 {
+	cout << __func__ << " " << __LINE__ << endl;
 	vector<unsigned char> bytes;
 	
 	// Add the type.  We cannot directly add the bytes of a short to the vector,
@@ -222,38 +237,60 @@ std::vector<unsigned char> writeArpPktToBytes(ARP_PKT pkt)
 
 ARP_PKT writeBytesToArpPkt(char* buffer)
 {
-	ARP_PKT pkt;
-	int i = 0, j = 0;
+	cout << __func__ << " " << __LINE__ << endl;
+	cout << "buffer: " << buffer << endl;
+	ARP_PKT arpPkt;
+	int currentByte = 0;
 	
-	// get the op out
-	//memcpy(&(pkt.op), &(buffer[0]), 2);
-	//get op out of buf to another string then atoi
-	char op[1];
-	for(j = 0; j < sizeof(op); i++, j++)
-		op[j] = buffer[i];
-	pkt.op = atoi(op);
-	//get the src ip
-	//memcpy(&(pkt.srcip), &(buffer[2]), 4);
-	char ip[4];
-	for(j = 0; j < 4; i++, j++)
-		ip[j] = buffer[i];
-	pkt.srcip = atoi(ip);
-	//get src mac
-	//memcpy(&(pkt.srcmac), &(buffer[6]), 18);
-	for(j = 0; j < 18; i++, j++)
-		pkt.srcmac[j] = buffer[i];
+	unsigned char op = buffer[currentByte++];
+	if(op == '0')
+		arpPkt.op = 0;
+	else if(op == '1')
+		arpPkt.op = 1;
+	else {
+		cout << __func__ << " " << __LINE__ << " ERROR" << endl;
+		exit(1);
+	}
 	
+	char srcIp[sizeof(IPAddr) + 1];
+	for(unsigned int i = 0; i < sizeof(srcIp); ++i)
+		srcIp[i] = 0;
 	
-	//memcpy(&(pkt.dstip), &(buffer[24]), 4);
-	for(j = 0; j < 4; i++, j++)
-		ip[j] = buffer[i];
-	pkt.dstip = atoi(ip);
+	for(unsigned int i = 0; i < sizeof(srcIp); ++i)
+		srcIp[i] = buffer[currentByte++];
 	
-	//memcpy(&(pkt.dstmac), &(buffer[28]), 18);
-	for(j = 0; j < 18; i++, j++)
-		pkt.dstmac[j] = buffer[i];
+	cout << "srcIP: " << srcIp << endl;
+	arpPkt.srcip = atoi(srcIp);
 	
-	return pkt;
+	cout << "src ip: " << arpPkt.srcip << " and ntop(): " << ntop(arpPkt.srcip) << endl;
+	cout << "buffer now: " << &buffer[currentByte] << endl;
+	
+	for(unsigned int i = 0; i < sizeof(MacAddr) - 1; ++i, ++currentByte)
+		arpPkt.srcmac[i] = buffer[currentByte];
+	
+	cout << "src mac: " << arpPkt.srcmac << endl;
+	cout << "buffer now: " << &buffer[currentByte] << endl;
+	
+	char dstIp[sizeof(IPAddr) + 1];
+	for(unsigned int i = 0; i < sizeof(dstIp); ++i)
+		dstIp[i] = 0;
+	
+	for(unsigned int i = 0; i < sizeof(dstIp); ++i)
+		dstIp[i] = buffer[currentByte++];
+	
+	cout << "dstIP: " << dstIp << endl;
+	arpPkt.dstip = atoi(dstIp);
+	
+	cout << "dst ip: " << arpPkt.dstip << " and ntop(): " << ntop(arpPkt.dstip) << endl;
+	cout << "buffer now: " << &buffer[currentByte] << endl;
+	
+	for(unsigned int i = 0; i < sizeof(MacAddr) - 1; ++i, ++currentByte)
+		arpPkt.dstmac[i] = buffer[currentByte];
+	
+	cout << "dst mac: " << arpPkt.dstmac << endl;
+	cout << "buffer now: " << &buffer[currentByte] << endl;
+	
+	return arpPkt;
 }
 
 IP_PKT writeBytesToIpPkt(char *buffer)
