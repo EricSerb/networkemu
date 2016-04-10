@@ -52,6 +52,7 @@ cout << __func__ << __LINE__ << endl;
 			insertArpCache(arpPkt.dstip, arpPkt.dstmac);
 			// TODO: how will we handle moving the packets that did not have a dest MAC to
 			// the pending queue?
+			moveFromArpWaitToPQ(arpPkt);
 		}
 		else {
 			cout << "ARP OP UNKNOWN.  Bad error, exiting before things break even more." << endl;
@@ -500,4 +501,18 @@ CacheEntry Station::lookupArpCache(IPAddr ip)
 
 	gettimeofday(&(it->second.timeStamp), NULL);
 	return it->second;
+}
+
+void Station::moveFromArpWaitToPQ(arpPkt)
+{
+	for(int i = 0; i < m_arpWaitQueue.size(); i++)
+	{
+		if(m_arpWaitQueue[i].srcip == arpPkt.dstip)
+		{
+			EtherPkt movingPkt = m_arpWaitQueue[i];
+			strcpy(movingPkt.dst, arpPkt.srcmac)
+			m_pendingQueue.push_back(writeEthernetPacketToBytes(movingPkt));
+			m_arpWaitQueue.erase(m_arpWaitQueue.begin()+i);
+		}
+	}
 }
