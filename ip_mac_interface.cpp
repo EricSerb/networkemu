@@ -295,7 +295,7 @@ ARP_PKT writeBytesToArpPkt(char* buffer)
 
 IP_PKT writeBytesToIpPkt(char *buffer)
 {
-	/*
+	
 	IP_PKT ipPkt;
 	cout << __func__ << " " << __LINE__ << endl;
 	cout << "buffer: " << buffer << endl;
@@ -326,8 +326,23 @@ IP_PKT writeBytesToIpPkt(char *buffer)
 	cout << "src ip: " << ipPkt.srcip << " and ntop(): " << ntop(ipPkt.srcip) << endl;
 	cout << "buffer now: " << &buffer[currentByte] << endl;
 	
+	char length[3];
+	
+	for(unsigned int i = 0; i < sizeof(length) - 1; ++i, ++currentByte)
+		length[i] = buffer[currentByte];
+	length[2] = 0;
+	cout << __func__ << " " << __LINE__ << " length: " << length<< endl;
+	ipPkt.length = atoi(length);
+	
+	cout << "ip length: " << ipPkt.length << endl;
+	cout << "buffer now: " << &buffer[currentByte] << endl;
+	
+	for(int i = 0; i < IPBUFSIZE; ++i, ++currentByte)
+		ipPkt.data[i] = buffer[currentByte];
+	cout << "ipPkt.buf after copy: " << ipPkt.data << endl;
+	
 	return ipPkt;
-	*/
+	/*
 	
 	int i = 0, j = 0;
 	
@@ -359,7 +374,7 @@ IP_PKT writeBytesToIpPkt(char *buffer)
 		pkt.data[j] = buffer[i];
 	
 	
-	return pkt;
+	return pkt;*/
 }
 
 
