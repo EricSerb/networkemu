@@ -75,6 +75,7 @@ int main (int argc, char *argv[])
 		select(maxFd+1, &readSet, NULL, NULL, &timeout);
 
 		station.sendPendingPackets();
+		station.arpCacheTimeout();
 		for(int i = 0; i <= maxFd; ++i) {
 			int bytesRead = 0;
 			

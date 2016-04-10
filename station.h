@@ -36,8 +36,11 @@ public:
 	void handleUserInput(char inputBuffer[BUFSIZE]);
 	void handlePacket(char inputBuffer[BUFSIZE]);
 	
+	void moveFromArpWaitToPQ(ARP_PKT arpPkt);
+	
 	void constructArpRequest(IPAddr dstip);
 	void constructArpReply(ARP_PKT general);
+	void arpCacheTimeout();
 	
 	void displayArpCache();
 	void displayPQ();
@@ -49,7 +52,6 @@ public:
 	//Return the structure since you cannot return an array in c++....
 	CacheEntry lookupArpCache(IPAddr ip);	
 	
-	void moveFromArpWaitToPQ(ARP_PKT arpPkt);
 private:
 	bool m_router; // Are we a router?
 	
