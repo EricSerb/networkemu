@@ -17,6 +17,11 @@ struct CacheEntry {
 	timeval timeStamp;
 };
 
+struct socketBufferEntry {
+	int fd;
+	std::vector<unsigned char> bytes;
+};
+
 class Station {
 public:
 	Station(bool routerFlag, std::string ifaceFile, std::string rtableFile, std::string hostFile);
@@ -60,7 +65,7 @@ private:
 	std::vector<iface> m_ifaces; // All interfaces attached to the station
 	std::vector<rtable> m_rTableEntries; // Entries for the routing table
 	std::map<std::string, IPAddr> m_hostMap; // Our DNS, maps hostname => IP
-	std::vector<std::vector<unsigned char > > m_pendingQueue; // packets waiting to be sent out with KNOWN dest mac
+	std::vector<socketBufferEntry> m_pendingQueue; // packets waiting to be sent out with KNOWN dest mac
 	std::vector<EtherPkt> m_arpWaitQueue; // packets that can't be sent out until we know dest mac
 	std::map<IPAddr, CacheEntry> m_arpCache; // map of IP address to to MAC address/time stamp
 	std::map<IPAddr, int> m_fdLookup //map of IPAddr to fd to use for routing table
