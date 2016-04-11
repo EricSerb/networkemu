@@ -75,8 +75,8 @@ cout << __func__ << __LINE__ << endl;
 				else{
 					cout << "destsubnet: " << m_rTableEntries[i].destsubnet 
 					<< " mask: " << m_rTableEntries[i].mask
-					<< " ipPkt.dst: "ipPkt.dstip 
-					<< " mask & dstip: "(m_rTableEntries[i].mask & ipPkt.dstip) << endl;
+					<< " ipPkt.dst: " << ipPkt.dstip 
+					<< " mask & dstip: " << (m_rTableEntries[i].mask & ipPkt.dstip) << endl;
 				}
 			}
 			
@@ -215,22 +215,21 @@ void Station::sendPendingPackets()
 		memcpy(&buf, &m_pendingQueue[i][0], m_pendingQueue[i].size());
 cout << "ATTEMPTING A SEND ON LINE " << __LINE__ << " WITH BUFFER: " << buf << endl;
 
-		if(send(socket(), buf, sizeof(buf), 0) == -1) {
-			int outFd;
-			// If we are a router, then we want to forward the packet to where ever
-			if(router()) {
-				// TODO: outFD should be the next hop
-			}
-			else
-				outFd = m_fd[0];
-			
-			if(send(outFd, buf, sizeof(buf), 0) == -1) {
-				cout << "Could not send m_pendingQueue[" << i << "]: " << &m_pendingQueue[i] << endl;
-				cout << "buf: " << buf << endl;
-			}
-			else
-				cout << "sent a packet successfully! buffer is << " << buf  << endl;
+		int outFd;
+		// If we are a router, then we want to forward the packet to where ever
+		if(router()) {
+			// TODO: outFD should be the next hop
 		}
+		else
+			outFd = m_fd[0];
+		
+		if(send(outFd, buf, sizeof(buf), 0) == -1) {
+			cout << "Could not send m_pendingQueue[" << i << "]: " << &m_pendingQueue[i] << endl;
+			cout << "buf: " << buf << endl;
+		}
+		else
+			cout << "sent a packet successfully! buffer is << " << buf  << endl;
+
 		
 	}
 	m_pendingQueue.clear();
@@ -439,9 +438,9 @@ void Station::connectToBridge()
 	
 	getaddrinfo(addr.c_str(), port.c_str(), &hints, &res);
 	
-	m_fd = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+	int fd = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
-	if(connect(m_fd, res->ai_addr, res->ai_addrlen) < 0) {
+	if(connect(fd, res->ai_addr, res->ai_addrlen) < 0) {
 		perror("connect()");
 		return;
 	}
@@ -463,11 +462,12 @@ void Station::connectToBridge()
 	}
 	else if (strcmp(buf, "Accept") == 0) {
 		cout << addr << " accepted our connection!" << endl;
+		m_fd.push_back(fd);
 	}
 	//TODO:  try to connect 5 times, then give up (as per writeup)
 	else  {
 		cout << "Not sure what " << addr << " had to say about connecting to us.  Skipping it." << endl;
-		close();
+		close(fd);
 		return;
 	}
 
