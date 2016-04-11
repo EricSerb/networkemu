@@ -450,14 +450,14 @@ void Station::connectToBridge()
 	// We must listen for an "accept" or "reject" string from the bridge
 	int bytesRead = 0;
 	char buf[BUFSIZE];
-	if((bytesRead = recv(m_fd, buf, sizeof buf, 0)) <= 0) {
+	if((bytesRead = recv(fd, buf, sizeof buf, 0)) <= 0) {
 		cout << "recv error while listening for accept/reject" << endl;
 		return;
 	}
 
 	if(strcmp(buf, "Reject") == 0) {
 		cout << addr << " rejected our connection!" << endl;
-		close();
+		close(fd);
 		return;
 	}
 	else if (strcmp(buf, "Accept") == 0) {
