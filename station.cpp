@@ -17,6 +17,24 @@ Station::Station(bool routerFlag, string ifaceFile, string rtableFile, string ho
 	// No need to initialize m_fd vector.  We will push back values as needed
 }
 
+SocketBufferEntry Station::createSbEntry(IPAddr ip, vector<unsigned char> bytes)
+{
+	SocketBufferEntry sbEntry;
+			
+	auto it = m_fdLookup.find(ip);
+	if(it == m_fdLookup.end()) {
+		//TODO: handle this case
+		cout << "fdLookup failed" << endl;
+		exit(1);
+	}
+	
+	sbEntry.fd = it->second;
+	
+	sbEntry.bytes.assign(bytes.begin(), bytes.end());
+	
+	return sbEntry;
+}
+
 /**
  * When a packet has arrived, we need to determine if it is an ARP or IP.
  * Depending on what kind of packet it is, we need to either:
@@ -67,9 +85,8 @@ cout << __func__ << __LINE__ << endl;
 			for(unsigned int i = 0; i < m_rTableEntries.size(); ++i) {
 				if(m_rTableEntries[i].destsubnet == (m_rTableEntries[i].mask & ipPkt.dstip)) {
 					// Found it!  Get the next hop and send the packet that way
-					socketBufferEntry pktToSend;
-					pktToSend.fd = fdLookup.find(m_rTableEntries[i].destsubnet)->second;
-					strcpy(pktToSend.buffer, inputBuffer);
+					SocketBufferEntry pktToSend = createSbEntry(ipPkt.dstip, writeEthernetPacketToBytes(etherPkt));
+
 					m_pendingQueue.push_back(pktToSend);
 				}
 				else{
@@ -160,8 +177,10 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 			gettimeofday(&(cacheItr->second.timeStamp), NULL);
 			strcpy(etherPkt.dst, cacheItr->second.mac);
 			cout << "eth.dst" << etherPkt.dst << endl;
-			vector<unsigned char> ethBytes = writeEthernetPacketToBytes(etherPkt);
-			m_pendingQueue.push_back(ethBytes);
+
+			SocketBufferEntry sbEntry = createSbEntry(ipPkt.dstip, writeEthernetPacketToBytes(etherPkt));
+			
+			m_pendingQueue.push_back(sbEntry);
 		}
 	}
 
@@ -198,12 +217,34 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 	//cout << "Skipped every option include invalid... Major error" << endl;
 }
 
+vector< int > Station::sockets()
+{
+	return m_fd;
+}
+
+bool Station::router()
+{
+	return m_router;
+}
+
+bool Station::isSocket(int fd)
+{
+	for(unsigned int i = 0; i < m_fd.size(); ++i) {
+		if(m_fd[i] == fd)
+			return true;
+	}
+		
+	return false;
+}
+
+
 /**
  * Iterate through the pending packet queue and send everything out
  * TODO: pendingQueue should associate a file descriptor with a buffer
  */
 void Station::sendPendingPackets()
 {
+	/*
 	if(m_pendingQueue.size() > 0)
 		displayPQ();
 	
@@ -233,6 +274,7 @@ cout << "ATTEMPTING A SEND ON LINE " << __LINE__ << " WITH BUFFER: " << buf << e
 		
 	}
 	m_pendingQueue.clear();
+*/
 }
 
 
@@ -271,9 +313,9 @@ void Station::constructArpRequest(IPAddr dstip)
 	memcpy(&etherPkt.data, &arpBytes[0], arpBytes.size());
 	
 	// Need EtherPkt bytes for pendingQueue
-	vector<unsigned char> ethBytes = writeEthernetPacketToBytes(etherPkt);
-	//etherPkt.dump()
-	m_pendingQueue.push_back(ethBytes);
+
+	SocketBufferEntry sbEntry = createSbEntry(dstip, writeEthernetPacketToBytes(etherPkt));
+	m_pendingQueue.push_back(sbEntry);
 }
 
 void Station::constructArpReply(ARP_PKT general)
@@ -306,8 +348,8 @@ cout << __func__ << __LINE__ << endl;
 cout << __func__ << __LINE__ << endl;
 	ePkt.dump();
 cout << __func__ << __LINE__ << endl;
-	vector<unsigned char> ethBytes = writeEthernetPacketToBytes(ePkt);
-	m_pendingQueue.push_back(ethBytes);
+	SocketBufferEntry sbEntry = createSbEntry(arpPkt.dstip, writeEthernetPacketToBytes(ePkt));
+	m_pendingQueue.push_back(sbEntry);
 }
 
 /**
@@ -345,9 +387,9 @@ void Station::displayPQ()
 	cout << "PENDING QUEUE CONTENTS" << endl;
 	for(unsigned int i = 0; i < m_pendingQueue.size(); i++)
 	{
-		for(unsigned int j = 0; j < m_pendingQueue[i].size(); j++)
+		for(unsigned int j = 0; j < m_pendingQueue[i].bytes.size(); j++)
 		{
-			cout << m_pendingQueue[i][j];	
+			cout << m_pendingQueue[i].bytes[j];	
 		}
 	}
 	cout << endl;
@@ -508,7 +550,8 @@ void Station::moveFromArpWaitToPQ(ARP_PKT arpPkt)
 		{
 			EtherPkt movingPkt = m_arpWaitQueue[i];
 			strcpy(movingPkt.dst, arpPkt.srcmac);
-			m_pendingQueue.push_back(writeEthernetPacketToBytes(movingPkt));
+			SocketBufferEntry sbEntry = createSbEntry(arpPkt.srcip, writeEthernetPacketToBytes(movingPkt));
+			m_pendingQueue.push_back(sbEntry);
 			m_arpWaitQueue.erase(m_arpWaitQueue.begin()+i);
 		}
 	}

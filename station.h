@@ -17,7 +17,7 @@ struct CacheEntry {
 	timeval timeStamp;
 };
 
-struct socketBufferEntry {
+struct SocketBufferEntry {
 	int fd;
 	std::vector<unsigned char> bytes;
 };
@@ -33,6 +33,7 @@ public:
 	void connectToBridge();
 	
 	void sendPendingPackets();
+	SocketBufferEntry createSbEntry(IPAddr ip, std::vector<unsigned char> bytes);
 	
 	IPAddr ip();
 	std::string mac();
@@ -65,7 +66,7 @@ private:
 	std::vector<iface> m_ifaces; // All interfaces attached to the station
 	std::vector<rtable> m_rTableEntries; // Entries for the routing table
 	std::map<std::string, IPAddr> m_hostMap; // Our DNS, maps hostname => IP
-	std::vector<socketBufferEntry> m_pendingQueue; // packets waiting to be sent out with KNOWN dest mac
+	std::vector<SocketBufferEntry> m_pendingQueue; // packets waiting to be sent out with KNOWN dest mac
 	std::vector<EtherPkt> m_arpWaitQueue; // packets that can't be sent out until we know dest mac
 	std::map<IPAddr, CacheEntry> m_arpCache; // map of IP address to to MAC address/time stamp
 	std::map<IPAddr, int> m_fdLookup; //map of IPAddr to fd to use for routing table
