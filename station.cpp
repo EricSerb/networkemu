@@ -215,21 +215,22 @@ void Station::sendPendingPackets()
 		memcpy(&buf, &m_pendingQueue[i][0], m_pendingQueue[i].size());
 cout << "ATTEMPTING A SEND ON LINE " << __LINE__ << " WITH BUFFER: " << buf << endl;
 
-		int outFd;
-		// If we are a router, then we want to forward the packet to where ever
-		if(router()) {
-			// TODO: outFD should be the next hop
+		if(send(socket(), buf, sizeof(buf), 0) == -1) {
+			int outFd;
+			// If we are a router, then we want to forward the packet to where ever
+			if(router()) {
+				// TODO: outFD should be the next hop
+			}
+			else
+				outFd = m_fd[0];
+			
+			if(send(outFd, buf, sizeof(buf), 0) == -1) {
+				cout << "Could not send m_pendingQueue[" << i << "]: " << &m_pendingQueue[i] << endl;
+				cout << "buf: " << buf << endl;
+			}
+			else
+				cout << "sent a packet successfully! buffer is << " << buf  << endl;
 		}
-		else
-			outFd = m_fd[0];
-		
-		if(send(outFd, buf, sizeof(buf), 0) == -1) {
-			cout << "Could not send m_pendingQueue[" << i << "]: " << &m_pendingQueue[i] << endl;
-			cout << "buf: " << buf << endl;
-		}
-		else
-			cout << "sent a packet successfully! buffer is << " << buf  << endl;
-	}
 	
 	m_pendingQueue.clear();
 }
