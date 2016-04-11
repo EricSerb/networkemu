@@ -68,7 +68,7 @@ private:
 	std::vector<socketBufferEntry> m_pendingQueue; // packets waiting to be sent out with KNOWN dest mac
 	std::vector<EtherPkt> m_arpWaitQueue; // packets that can't be sent out until we know dest mac
 	std::map<IPAddr, CacheEntry> m_arpCache; // map of IP address to to MAC address/time stamp
-	std::map<IPAddr, int> m_fdLookup //map of IPAddr to fd to use for routing table
+	std::map<IPAddr, int> m_fdLookup; //map of IPAddr to fd to use for routing table
 	
 };
 

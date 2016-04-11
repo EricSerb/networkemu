@@ -231,7 +231,8 @@ cout << "ATTEMPTING A SEND ON LINE " << __LINE__ << " WITH BUFFER: " << buf << e
 			else
 				cout << "sent a packet successfully! buffer is << " << buf  << endl;
 		}
-	
+		
+	}
 	m_pendingQueue.clear();
 }
 
