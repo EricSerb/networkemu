@@ -200,6 +200,7 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 
 /**
  * Iterate through the pending packet queue and send everything out
+ * TODO: pendingQueue should associate a file descriptor with a buffer
  */
 void Station::sendPendingPackets()
 {
@@ -213,7 +214,19 @@ void Station::sendPendingPackets()
 		
 		memcpy(&buf, &m_pendingQueue[i][0], m_pendingQueue[i].size());
 cout << "ATTEMPTING A SEND ON LINE " << __LINE__ << " WITH BUFFER: " << buf << endl;
+<<<<<<< HEAD
 		if(send(socket(), buf, sizeof(buf), 0) == -1) {
+=======
+		int outFd;
+		// If we are a router, then we want to forward the packet to where ever
+		if(router()) {
+			// TODO: outFD should be the next hop
+		}
+		else
+			outFd = m_fd[0];
+		
+		if(send(outFd, buf, sizeof(buf), 0) == -1) {
+>>>>>>> 2e01ae45fe8827a313117a9f69561190f8d5980b
 			cout << "Could not send m_pendingQueue[" << i << "]: " << &m_pendingQueue[i] << endl;
 			cout << "buf: " << buf << endl;
 		}
