@@ -311,34 +311,6 @@ cout << __func__ << __LINE__ << endl;
 	m_pendingQueue.push_back(ethBytes);
 }
 
-
-bool Station::router()
-{
-	return m_router;
-}
-
-int Station::socket()
-{
-	return m_fd;
-}
-
-/*
- * Determine whether or not a socket is closed.  Intended to be used for checks
- * against m_fd, where socket() is intended for assignments.
- */
-bool Station::closed()
-{
-	return socket() == -1;
-}
-
-
-void Station::close()
-{
-	if(!closed())
-		::close(m_fd);
-	m_fd = -1;
-}
-
 /**
  * Get our IP address.  TODO:  support multiple NICs
  */
