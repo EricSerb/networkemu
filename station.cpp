@@ -23,7 +23,8 @@ SocketBufferEntry Station::createSbEntry(IPAddr ip, vector<unsigned char> bytes)
 	cout << "passed ip: " << ip << " ntop: " << ntop(ip) << endl;
 	dumpFdLookup();
 	
-	auto it = m_fdLookup.find(ip);
+	//TODO: use proper mask
+	auto it = m_fdLookup.find((ip & m_ifaces[0].mask));
 	if(it == m_fdLookup.end()) {
 		//TODO: handle this case
 		cout << "fdLookup failed" << endl;
@@ -247,7 +248,7 @@ bool Station::isSocket(int fd)
 void Station::sendPendingPackets()
 {
 	if(m_pendingQueue.size() <= 0) {
-		cout << __func__ << __LINE__ << " nothing in PQ" << endl;
+		//cout << __func__ << __LINE__ << " nothing in PQ" << endl;
 		return;
 	}
 	
@@ -529,13 +530,16 @@ void Station::connectToBridge()
 
 IPAddr Station::getNextHop(char ifacename[])
 {
+	cout << "iface name: " << ifacename << endl;
 	for(unsigned int i = 0; i < m_rTableEntries.size(); ++i)
 	{
-		if(strcmp(m_rTableEntries[i].ifacename, ifacename))
+		cout << "[" << i << "] name: " << m_rTableEntries[i].ifacename << endl;
+		if(strcmp(m_rTableEntries[i].ifacename, ifacename) == 0)
 		{
 			return m_rTableEntries[i].destsubnet;
 		}
 	}
+	cout << ".end() next hop: " << m_rTableEntries.end()->nexthop << endl;
 	return m_rTableEntries.end()->nexthop;
 }
 
