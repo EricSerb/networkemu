@@ -40,6 +40,7 @@ public:
 	
 	void handleUserInput(char inputBuffer[BUFSIZE]);
 	void handlePacket(char inputBuffer[BUFSIZE], int incomingFd);
+	IPAddr getNextHop(IPAddr ip);
 	
 	void moveFromArpWaitToPQ(ARP_PKT arpPkt);
 	

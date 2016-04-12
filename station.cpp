@@ -498,8 +498,8 @@ void Station::connectToBridge()
 		else if (strcmp(buf, "Accept") == 0) {
 			cout << addr << " accepted our connection!" << endl;
 			m_fd.push_back(fd);
-			cout << __func__ << __LINE__ << "ip addr: " << ((sockaddr_in*)res->ai_addr)->sin_addr.s_addr << endl;
-			//m_fdLookup.insert(pair<IPAddr, int>(getNextHop(((sockaddr_in)res->ai_addr)->sin_addr.s_addr)));
+			//cout << __func__ << __LINE__ << "ip addr: " << ((sockaddr_in*)res->ai_addr)->sin_addr.s_addr << endl;
+			m_fdLookup.insert(pair<IPAddr, int>(getNextHop(((sockaddr_in*)res->ai_addr)->sin_addr.s_addr), fd));
 			return;
 		}
 		else  {
@@ -511,6 +511,18 @@ void Station::connectToBridge()
 	
 	close(fd);
 
+}
+
+IPAddr Station::getNextHop(IPAddr ip)
+{
+	for(unsigned int i = 0; i < m_rTableEntries.size(); ++i)
+	{
+		if(m_rTableEntries[i].destsubnet == (m_rTableEntries[i].mask & ip))
+		{
+			return m_rTableEntries[i].destsubnet;
+		}
+	}
+	return m_rTableEntries.end()->nexthop;
 }
 
 void Station::insertArpCache(IPAddr ip, MacAddr mac)
