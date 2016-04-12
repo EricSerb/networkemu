@@ -474,36 +474,40 @@ void Station::connectToBridge()
 	
 	int fd = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
-	if(connect(fd, res->ai_addr, res->ai_addrlen) < 0) {
-		perror("connect()");
-		return;
-	}
-	
-	cout << "Connected to " << addr << endl;
-	
-	// We must listen for an "accept" or "reject" string from the bridge
-	int bytesRead = 0;
-	char buf[BUFSIZE];
-	if((bytesRead = recv(fd, buf, sizeof buf, 0)) <= 0) {
-		cout << "recv error while listening for accept/reject" << endl;
-		return;
-	}
+	for(int i = 0; i < 5; ++i) {
+		if(connect(fd, res->ai_addr, res->ai_addrlen) < 0) {
+			perror("connect()");
+			return;
+		}
+		
+		cout << "Connected to " << addr << endl;
+		
+		// We must listen for an "accept" or "reject" string from the bridge
+		int bytesRead = 0;
+		char buf[BUFSIZE];
+		if((bytesRead = recv(fd, buf, sizeof buf, 0)) <= 0) {
+			cout << "recv error while listening for accept/reject" << endl;
+			return;
+		}
 
-	if(strcmp(buf, "Reject") == 0) {
-		cout << addr << " rejected our connection!" << endl;
-		close(fd);
-		return;
+		if(strcmp(buf, "Reject") == 0) {
+			cout << addr << " rejected our connection!" << endl;
+			close(fd);
+			return;
+		}
+		else if (strcmp(buf, "Accept") == 0) {
+			cout << addr << " accepted our connection!" << endl;
+			m_fd.push_back(fd);
+			return;
+		}
+		else  {
+			cout << "Could not connect on attempt " << i << endl;
+			sleep(2);
+		}
+		
 	}
-	else if (strcmp(buf, "Accept") == 0) {
-		cout << addr << " accepted our connection!" << endl;
-		m_fd.push_back(fd);
-	}
-	//TODO:  try to connect 5 times, then give up (as per writeup)
-	else  {
-		cout << "Not sure what " << addr << " had to say about connecting to us.  Skipping it." << endl;
-		close(fd);
-		return;
-	}
+	
+	close(fd);
 
 }
 
