@@ -244,37 +244,29 @@ bool Station::isSocket(int fd)
  */
 void Station::sendPendingPackets()
 {
-	/*
-	if(m_pendingQueue.size() > 0)
-		displayPQ();
+	if(m_pendingQueue.size() <= 0) {
+		cout << __func__ << __LINE__ << " nothing in PQ" << endl;
+		return;
+	}
+	
+	displayPQ();
 	
 	for(unsigned int i = 0; i < m_pendingQueue.size(); ++i) {
 		char buf[BUFSIZE];
 		for(unsigned int i = 0; i < sizeof(buf); ++i)
 				buf[i] = 0;
 		
-		memcpy(&buf, &m_pendingQueue[i][0], m_pendingQueue[i].size());
-cout << "ATTEMPTING A SEND ON LINE " << __LINE__ << " WITH BUFFER: " << buf << endl;
-
-		int outFd;
-		// If we are a router, then we want to forward the packet to where ever
-		if(router()) {
-			// TODO: outFD should be the next hop
-		}
-		else
-			outFd = m_fd[0];
+		memcpy(&buf, &m_pendingQueue[i].bytes[0], m_pendingQueue[i].bytes.size());
 		
-		if(send(outFd, buf, sizeof(buf), 0) == -1) {
-			cout << "Could not send m_pendingQueue[" << i << "]: " << &m_pendingQueue[i] << endl;
+		if(send(m_pendingQueue[i].fd, buf, sizeof(buf), 0) <= -1) {
+			cout << "Could not send PQ[" << i << "]: " << &m_pendingQueue[i].bytes[0] << endl;
 			cout << "buf: " << buf << endl;
 		}
 		else
-			cout << "sent a packet successfully! buffer is << " << buf  << endl;
-
-		
+			cout << "successfully sent a packet!" << endl;
 	}
+
 	m_pendingQueue.clear();
-*/
 }
 
 
