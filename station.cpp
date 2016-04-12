@@ -498,6 +498,8 @@ void Station::connectToBridge()
 		else if (strcmp(buf, "Accept") == 0) {
 			cout << addr << " accepted our connection!" << endl;
 			m_fd.push_back(fd);
+			cout << __func__ << __LINE__ << "ip addr: " << ((sockaddr_in*)res->ai_addr)->sin_addr.s_addr << endl;
+			//m_fdLookup.insert(pair<IPAddr, int>(getNextHop(((sockaddr_in)res->ai_addr)->sin_addr.s_addr)));
 			return;
 		}
 		else  {
