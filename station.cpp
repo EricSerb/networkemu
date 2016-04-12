@@ -463,77 +463,82 @@ void Station::connectToBridge()
 	if(m_ifaces.size() <= 0)
 		return;
 	
-	//TODO:  support more than just one connection (try one per interface)
-	string bridgeName(m_ifaces[0].lanname);
-	
-	string bridgeFile = bridgeName + ".info";
-	
-	ifstream infile(bridgeFile.c_str());
-	
-	if(!infile.is_open()) {
-		cout << "Error opening " << bridgeFile << " ...skipping this bridge." << endl;
-		return;
-	}
-	
-	string line;
-	
-	getline(infile, line);
-	stringstream linestream(line);
-	
-	string addr;
-	string port;
-	
-	linestream >> addr >> port;
-	
-	struct addrinfo *res;
-	
-	struct addrinfo hints;
-	memset(&hints, 0, sizeof hints);
-
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
-	
-	getaddrinfo(addr.c_str(), port.c_str(), &hints, &res);
-	
-	int fd = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-
-	for(int i = 0; i < 5; ++i) {
-		if(connect(fd, res->ai_addr, res->ai_addrlen) < 0) {
-			perror("connect()");
+	for(unsigned int i = 0; i < m_ifaces.size(); ++i) {
+		//TODO:  support more than just one connection (try one per interface)
+		string bridgeName(m_ifaces[i].lanname);
+		
+		string bridgeFile = bridgeName + ".info";
+		
+		ifstream infile(bridgeFile.c_str());
+		
+		if(!infile.is_open()) {
+			cout << "Error opening " << bridgeFile << " ...skipping this bridge." << endl;
 			return;
 		}
 		
-		cout << "Connected to " << addr << endl;
+		string line;
 		
-		// We must listen for an "accept" or "reject" string from the bridge
-		int bytesRead = 0;
-		char buf[BUFSIZE];
-		if((bytesRead = recv(fd, buf, sizeof buf, 0)) <= 0) {
-			cout << "recv error while listening for accept/reject" << endl;
-			return;
-		}
+		getline(infile, line);
+		stringstream linestream(line);
+		
+		string addr;
+		string port;
+		
+		linestream >> addr >> port;
+		
+		struct addrinfo *res;
+		
+		struct addrinfo hints;
+		memset(&hints, 0, sizeof hints);
 
-		if(strcmp(buf, "Reject") == 0) {
-			cout << addr << " rejected our connection!" << endl;
+		hints.ai_family = AF_INET;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_flags = AI_PASSIVE;
+		
+		getaddrinfo(addr.c_str(), port.c_str(), &hints, &res);
+		
+		int fd = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+
+		bool connected = false;
+		for(int j = 0; j < 5; ++j) {
+			if(connect(fd, res->ai_addr, res->ai_addrlen) < 0) {
+				perror("connect()");
+				return;
+			}
+			
+			cout << "Connected to " << addr << endl;
+			
+			// We must listen for an "accept" or "reject" string from the bridge
+			int bytesRead = 0;
+			char buf[BUFSIZE];
+			if((bytesRead = recv(fd, buf, sizeof buf, 0)) <= 0) {
+				cout << "recv error while listening for accept/reject" << endl;
+				return;
+			}
+
+			if(strcmp(buf, "Reject") == 0) {
+				cout << addr << " rejected our connection!" << endl;
+				close(fd);
+				return;
+			}
+			else if (strcmp(buf, "Accept") == 0) {
+				cout << addr << " accepted our connection!" << endl;
+				m_fd.push_back(fd);
+				//cout << __func__ << __LINE__ << "ip addr: " << ((sockaddr_in*)res->ai_addr)->sin_addr.s_addr << endl;
+				m_fdLookup.insert(pair<IPAddr, int>(getNextHop(m_ifaces[i].ifacename), fd));
+				connected = true;
+				break;
+				
+			}
+			else  {
+				cout << "Could not connect on attempt " << j << endl;
+				sleep(2);
+			}
+			
+		}
+		if(!connected)
 			close(fd);
-			return;
-		}
-		else if (strcmp(buf, "Accept") == 0) {
-			cout << addr << " accepted our connection!" << endl;
-			m_fd.push_back(fd);
-			//cout << __func__ << __LINE__ << "ip addr: " << ((sockaddr_in*)res->ai_addr)->sin_addr.s_addr << endl;
-			m_fdLookup.insert(pair<IPAddr, int>(getNextHop(m_ifaces[0].ifacename), fd));
-			return;
-		}
-		else  {
-			cout << "Could not connect on attempt " << i << endl;
-			sleep(2);
-		}
-		
 	}
-	
-	close(fd);
 
 }
 
