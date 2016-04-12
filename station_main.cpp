@@ -28,7 +28,7 @@ int main (int argc, char *argv[])
 	else if(strcmp(argv[1], "-no") == 0)
 		routerFlag = false;
 	else {
-		cout << "Router flag must be `-no` or `-station`" << endl;
+		cout << "Router flag must be `-no` or `-router`" << endl;
 		exit(1);
 	}
 
