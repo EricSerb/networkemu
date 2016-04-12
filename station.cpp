@@ -23,17 +23,26 @@ SocketBufferEntry Station::createSbEntry(IPAddr ip, vector<unsigned char> bytes)
 	cout << "passed ip: " << ip << " ntop: " << ntop(ip) << endl;
 	dumpFdLookup();
 	
-	//TODO: use proper mask
-	auto it = m_fdLookup.find((ip & m_ifaces[0].mask));
-	if(it == m_fdLookup.end()) {
-		//TODO: handle this case
+	// Try to find a match between the ip and each mask in the routing table so we know
+	// where to send this packet
+	bool found = false;
+	for(unsigned int i = 0; i < m_rTableEntries.size(); ++i) {
+		auto it = m_fdLookup.find((ip & m_rTableEntries[i].mask));
+		if(it != m_fdLookup.end()) {
+			// We found it!
+			cout << "fdLookup passed; found match in rtable." << endl;
+			found = true;
+			sbEntry.fd = it->second;
+			sbEntry.bytes.assign(bytes.begin(), bytes.end());
+			break;
+		}	
+	}
+	
+	// TODO: how to handle this case?
+	if(!found) {
 		cout << "fdLookup failed" << endl;
 		exit(1);
 	}
-	
-	sbEntry.fd = it->second;
-	
-	sbEntry.bytes.assign(bytes.begin(), bytes.end());
 	
 	return sbEntry;
 }
