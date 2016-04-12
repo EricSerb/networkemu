@@ -499,7 +499,7 @@ void Station::connectToBridge()
 			cout << addr << " accepted our connection!" << endl;
 			m_fd.push_back(fd);
 			//cout << __func__ << __LINE__ << "ip addr: " << ((sockaddr_in*)res->ai_addr)->sin_addr.s_addr << endl;
-			m_fdLookup.insert(pair<IPAddr, int>(getNextHop(((sockaddr_in*)res->ai_addr)->sin_addr.s_addr), fd));
+			m_fdLookup.insert(pair<IPAddr, int>(getNextHop(m_ifaces[0].ifacename), fd));
 			return;
 		}
 		else  {
@@ -513,11 +513,11 @@ void Station::connectToBridge()
 
 }
 
-IPAddr Station::getNextHop(IPAddr ip)
+IPAddr Station::getNextHop(char ifacename[])
 {
 	for(unsigned int i = 0; i < m_rTableEntries.size(); ++i)
 	{
-		if(m_rTableEntries[i].destsubnet == (m_rTableEntries[i].mask & ip))
+		if(strcmp(m_rTableEntries[i].ifacename, ifacename))
 		{
 			return m_rTableEntries[i].destsubnet;
 		}
