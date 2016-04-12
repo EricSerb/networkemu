@@ -53,6 +53,7 @@ public:
 	void displayInterfaces();
 	void displayRouteTable();
 	void displayHostMap();
+	void dumpFdLookup();
 
 	void insertArpCache(IPAddr ip, MacAddr mac);
 	//Return the structure since you cannot return an array in c++....

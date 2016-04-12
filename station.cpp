@@ -20,7 +20,9 @@ Station::Station(bool routerFlag, string ifaceFile, string rtableFile, string ho
 SocketBufferEntry Station::createSbEntry(IPAddr ip, vector<unsigned char> bytes)
 {
 	SocketBufferEntry sbEntry;
-			
+	cout << "passed ip: " << ip << " ntop: " << ntop(ip) << endl;
+	dumpFdLookup();
+	
 	auto it = m_fdLookup.find(ip);
 	if(it == m_fdLookup.end()) {
 		//TODO: handle this case
@@ -429,6 +431,18 @@ void Station::displayHostMap()
 		cout << endl;
 	}
 }
+
+void Station::dumpFdLookup()
+{
+	cout << "FD LOOKUP" << endl;
+	cout << "IP\tFD" << endl;
+	for(auto &it : m_fdLookup) {
+		cout << it.first << " ntop: " << ntop(it.first) << "\t";
+		cout << it.second << "\t";
+		cout << endl;
+	}
+}
+
 
 /**
  * Attempt to connect to a bridge by looking at the .info file created
