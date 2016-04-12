@@ -311,6 +311,7 @@ IP_PKT writeBytesToIpPkt(char *buffer)
 	
 	cout << "dstIP: " << dstIp << endl;
 	ipPkt.dstip = atoi(dstIp);
+	cout << "ipPkt dst after copy: " << ipPkt.dstip << " ntop: " << ntop(ipPkt.dstip) << endl;
 	cout << "buffer now: " << &buffer[currentByte] << endl;
 	
 	char srcIp[sizeof(IPAddr) + 1];
