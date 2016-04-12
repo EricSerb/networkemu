@@ -43,7 +43,7 @@ std::vector< unsigned char > writeEthernetPacketToBytes(EtherPkt pkt)
 	for(unsigned int i = 0; i < sizeof(pkt.src) - 1; ++i)
 		bytes.push_back(pkt.src[i]);
 	
-	cout << "out bytes are: " << &bytes[0] << endl;
+cout << __func__ << " " << __LINE__ << "out bytes are: " << &bytes[0] << endl;
 	// Add the type.  We cannot directly add the bytes of a short to the vector,
 	// so cast it to a string first
 	string type = to_string((int)pkt.type);
@@ -75,7 +75,7 @@ std::vector< unsigned char > writeEthernetPacketToBytes(EtherPkt pkt)
 	*/
 	
 	// Size is also a short and must be read byte by byte.
-	cout << "out bytes are: " << &bytes[0] << endl;
+cout << __func__ << " " << __LINE__ << "out bytes are: " << &bytes[0] << endl;
 	string size = to_string((int)pkt.size);
 	cout << "size string: " << size << " with length: " << size.length() << endl;
 
@@ -86,7 +86,7 @@ std::vector< unsigned char > writeEthernetPacketToBytes(EtherPkt pkt)
 	// field ends and where the data buffer begins
 	for(unsigned int i = 0; i < size.length(); ++i)
 		bytes.push_back(size[i]);
-	cout << "out bytes are: " << &bytes[0] << endl;
+cout << __func__ << " " << __LINE__ << "out bytes are: " << &bytes[0] << endl;
 	// Add the data (which is any valid string that is terminated by \0)
 	for(unsigned int i = 0; i < sizeof(pkt.data); ++i) {
 		if(pkt.data[i] == 0)
@@ -94,7 +94,7 @@ std::vector< unsigned char > writeEthernetPacketToBytes(EtherPkt pkt)
 		
 		bytes.push_back(pkt.data[i]);
 	}
-	cout << "out bytes are: " << &bytes[0] << endl;
+cout << __func__ << " " << __LINE__ << "out bytes are: " << &bytes[0] << endl;
 	
 	//delete typeBytes;
 	//delete sizeBytes;
