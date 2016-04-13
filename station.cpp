@@ -27,6 +27,9 @@ SocketBufferEntry Station::createSbEntry(IPAddr ip, vector<unsigned char> bytes)
 	// where to send this packet
 	bool found = false;
 	for(unsigned int i = 0; i < m_rTableEntries.size(); ++i) {
+		cout << "rTableEntries dest: " << ntop(m_rTableEntries[i].destsubnet) << " rTable mask: " << ntop(m_rTableEntries[i].mask)
+		<< " and our masked ip: " << ntop((ip & m_rTableEntries[i].mask))
+		<< " rTable nexthop: " << ntop(m_rTableEntries[i].nexthop) << endl;
 		auto it = m_fdLookup.find((ip & m_rTableEntries[i].mask));
 		if(it != m_fdLookup.end()) {
 			// We found it!
