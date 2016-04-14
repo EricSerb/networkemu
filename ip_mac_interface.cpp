@@ -183,7 +183,7 @@ EtherPkt writeBytesToEtherPacket(char *buffer)
 	etherPkt.size = atoi(size);
 
 
-	cout << "arp packet size: " << sizeof(ARP_PKT) << " etherPkt.size after copy: " << etherPkt.size << endl;
+	//cout << "arp packet size: " << sizeof(ARP_PKT) << " etherPkt.size after copy: " << etherPkt.size << endl;
 	
 	cout << "etherPkt.buf before copy: " << etherPkt.data << endl;
 	for(int i = 0; i < ETHBUFSIZE; ++i, ++currentByte)

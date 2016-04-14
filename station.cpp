@@ -30,14 +30,20 @@ SocketBufferEntry Station::createSbEntry(IPAddr ip, vector<unsigned char> bytes)
 		cout << "rTableEntries dest: " << ntop(m_rTableEntries[i].destsubnet) << " rTable mask: " << ntop(m_rTableEntries[i].mask)
 		<< " and our masked ip: " << ntop((ip & m_rTableEntries[i].mask))
 		<< " rTable nexthop: " << ntop(m_rTableEntries[i].nexthop) << endl;
-		auto it = m_fdLookup.find((ip & m_rTableEntries[i].mask));
-		if(it != m_fdLookup.end()) {
-			// We found it!
-			cout << "fdLookup passed; found match in rtable." << endl;
-			found = true;
-			sbEntry.fd = it->second;
-			sbEntry.bytes.assign(bytes.begin(), bytes.end());
-			break;
+		
+		// If the masked ip matches a destination subnet, then we know where to send the packet next
+		if((ip & m_rTableEntries[i].mask) == m_rTableEntries[i].destsubnet) {
+			string iface(m_rTableEntries[i].ifacename);
+			cout << "Matched interface: " << iface << " and destsubnet: " << ntop(m_rTableEntries[i].destsubnet) <<  endl;
+			auto it = m_fdLookup.find(iface);
+			if(it != m_fdLookup.end()) {
+				// We found it!
+				cout << "fdLookup passed; found match in rtable" << endl;
+				found = true;
+				sbEntry.fd = it->second;
+				sbEntry.bytes.assign(bytes.begin(), bytes.end());
+				break;
+			}
 		}	
 	}
 	
@@ -69,6 +75,10 @@ void Station::handlePacket(char inputBuffer[BUFSIZE], int incomingFd)
 cout << __func__ << __LINE__ << endl;
 	etherPkt.dump();
 cout << __func__ << __LINE__ << endl;
+
+	// If we have received a packet destined for us, drop it
+	if(strcmp(etherPkt.dst, mac().c_str()) != 0)
+		return;
 	
 	// If we have received an ARP Packet, we need to know if it is a request or a reply
 	if(etherPkt.type == TYPE_ARP_PKT) {
@@ -78,9 +88,9 @@ cout << __func__ << __LINE__ << endl;
 cout << __func__ << __LINE__ << endl;
 			constructArpReply(arpPkt);
 		}
-		// We've received a reply, which means that we can map the dest IP to a dest MAC
+		// We've received a reply, which means that we can map the IP and MACs
 		else if(arpPkt.op == ARP_REPLY) {
-			insertArpCache(arpPkt.dstip, arpPkt.dstmac);
+			insertArpCache(arpPkt.srcip, arpPkt.srcmac);
 			moveFromArpWaitToPQ(arpPkt);
 		}
 		else {
@@ -206,8 +216,10 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 		
 		cout << "target: " << target << endl;
 
-		if(target == "arp")
+		if(target == "arp") {
 			displayArpCache();
+			dumpFdLookup();
+		}
 		else if(target == "pq")
 			displayPQ();
 		else if(target == "host")
@@ -448,9 +460,9 @@ void Station::displayHostMap()
 void Station::dumpFdLookup()
 {
 	cout << "FD LOOKUP" << endl;
-	cout << "IP\tFD" << endl;
+	cout << "IFACENAME\tFD" << endl;
 	for(auto &it : m_fdLookup) {
-		cout << it.first << " ntop: " << ntop(it.first) << "\t";
+		cout << it.first << "\t";
 		cout << it.second << "\t";
 		cout << endl;
 	}
@@ -528,7 +540,7 @@ void Station::connectToBridge()
 				cout << addr << " accepted our connection!" << endl;
 				m_fd.push_back(fd);
 				//cout << __func__ << __LINE__ << "ip addr: " << ((sockaddr_in*)res->ai_addr)->sin_addr.s_addr << endl;
-				m_fdLookup.insert(pair<IPAddr, int>(getNextHop(m_ifaces[i].ifacename), fd));
+				m_fdLookup.insert(pair<string, int>(m_ifaces[i].ifacename, fd));
 				connected = true;
 				break;
 				
@@ -543,21 +555,6 @@ void Station::connectToBridge()
 			close(fd);
 	}
 
-}
-
-IPAddr Station::getNextHop(char ifacename[])
-{
-	cout << "iface name: " << ifacename << endl;
-	for(unsigned int i = 0; i < m_rTableEntries.size(); ++i)
-	{
-		cout << "[" << i << "] name: " << m_rTableEntries[i].ifacename << endl;
-		if(strcmp(m_rTableEntries[i].ifacename, ifacename) == 0)
-		{
-			return m_rTableEntries[i].destsubnet;
-		}
-	}
-	cout << ".end() next hop: " << m_rTableEntries.end()->nexthop << endl;
-	return m_rTableEntries.end()->nexthop;
 }
 
 void Station::insertArpCache(IPAddr ip, MacAddr mac)
@@ -596,6 +593,8 @@ void Station::moveFromArpWaitToPQ(ARP_PKT arpPkt)
 			EtherPkt movingPkt = m_arpWaitQueue[i];
 			strcpy(movingPkt.dst, arpPkt.srcmac);
 			SocketBufferEntry sbEntry = createSbEntry(arpPkt.srcip, writeEthernetPacketToBytes(movingPkt));
+			cout << endl << endl << __func__ << " " << "IP that we're sending it to: " << movingPkt.dst << endl << endl;
+			dumpFdLookup();
 			m_pendingQueue.push_back(sbEntry);
 			m_arpWaitQueue.erase(m_arpWaitQueue.begin()+i);
 		}

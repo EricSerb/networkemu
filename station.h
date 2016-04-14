@@ -40,7 +40,6 @@ public:
 	
 	void handleUserInput(char inputBuffer[BUFSIZE]);
 	void handlePacket(char inputBuffer[BUFSIZE], int incomingFd);
-	IPAddr getNextHop(char ifacename[]);
 	
 	void moveFromArpWaitToPQ(ARP_PKT arpPkt);
 	
@@ -71,7 +70,7 @@ private:
 	std::vector<SocketBufferEntry> m_pendingQueue; // packets waiting to be sent out with KNOWN dest mac
 	std::vector<EtherPkt> m_arpWaitQueue; // packets that can't be sent out until we know dest mac
 	std::map<IPAddr, CacheEntry> m_arpCache; // map of IP address to to MAC address/time stamp
-	std::map<IPAddr, int> m_fdLookup; //map of IPAddr to fd to use for routing table
+	std::map<std::string, int> m_fdLookup; //map of IPAddr to fd to use for routing table
 	
 };
 
