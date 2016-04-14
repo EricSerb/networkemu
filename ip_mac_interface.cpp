@@ -109,14 +109,22 @@ cout << __func__ << " " << __LINE__ << "out bytes are: " << &bytes[0] << endl;
 std::vector< unsigned char > writeIpPktToBytes(IP_PKT pkt)
 {
 	vector<unsigned char> bytes;
+	string dstIP = to_string((int)pkt.dstip);
+	unsigned int currentIndex = 0;
+	for(unsigned int i = 0; i < (sizeof(IPAddr) + 2 - dstIP.length()); ++i, ++currentIndex)
+		bytes.push_back('0');
 	
-	string dst = to_string((int)pkt.dstip);
-	for(unsigned int i = 0; i < dst.length(); ++i)
-		bytes.push_back(dst[i]);
+	for(unsigned int i = currentIndex; i < dstIP.length(); ++i)
+		bytes.push_back(dstIP[i]);
 	
-	string src = to_string((int)pkt.srcip);
-	for(unsigned int i = 0; i < src.length(); ++i)
-		bytes.push_back(src[i]);
+	currentIndex = 0;
+	string srcIP = to_string((int)pkt.srcip);
+	for(unsigned int i = 0; i < (sizeof(IPAddr) + 2 - srcIP.length()); ++i, ++currentIndex)
+		bytes.push_back('0');
+	
+	cout << "size of srcIP: " << srcIP.length() << endl;
+	for(unsigned int i = currentIndex; i < srcIP.length(); ++i)
+		bytes.push_back(srcIP[i]);
 	
 	string len = to_string((int)pkt.length);
 	for(unsigned int i = 0; i < len.length(); ++i)
@@ -213,20 +221,38 @@ std::vector<unsigned char> writeArpPktToBytes(ARP_PKT pkt)
 	
 	// Add the source mac addr
 	string srcIP = to_string((int)pkt.srcip);
+	cout << __func__ << " " << __LINE__ << " bytes: " << &bytes[0] << endl;
+	
+	unsigned int currentIndex = 0;
+	for(unsigned int i = 0; i < (sizeof(IPAddr) + 2 - srcIP.length()); ++i, ++currentIndex)
+		bytes.push_back('0');
+	
+	cout << __func__ << " " << __LINE__ << " bytes: " << &bytes[0] << endl;
 	
 	cout << "size of srcIP: " << srcIP.length() << endl;
-	for(unsigned int i = 0; i < srcIP.length(); ++i)
+	for(unsigned int i = currentIndex; i < srcIP.length(); ++i)
 		bytes.push_back(srcIP[i]);
+	
+	cout << __func__ << " " << __LINE__ << " bytes: " << &bytes[0] << endl;
 	
 	// size - 1 because final byte is null terminator.
 	// This will have to be added in at the other side
 	for(unsigned int i = 0; i < sizeof(pkt.srcmac) - 1; ++i)
 		bytes.push_back(pkt.srcmac[i]);
 	
+	currentIndex = 0;
 	string dstIP = to_string((int)pkt.dstip);
 	cout << "dstIp: " << dstIP << " pkt dst ip: " << pkt.dstip << " ntop: " << ntop(pkt.dstip) << endl;
-	for(unsigned int i = 0; i < dstIP.length(); ++i)
+	
+	cout << __func__ << " " << __LINE__ << " bytes: " << &bytes[0] << endl;
+	for(unsigned int i = 0; i < (sizeof(IPAddr) + 2 - dstIP.length()); ++i, ++currentIndex)
+		bytes.push_back('0');
+	
+	cout << __func__ << " " << __LINE__ << " bytes: " << &bytes[0] << endl;
+	
+	for(unsigned int i = currentIndex; i < dstIP.length(); ++i)
 		bytes.push_back(dstIP[i]);
+	cout << __func__ << " " << __LINE__ << " bytes: " << &bytes[0] << endl;
 	
 	// size - 1 because final byte is null terminator.
 	// This will have to be added in at the other side
@@ -254,7 +280,7 @@ ARP_PKT writeBytesToArpPkt(char* buffer)
 		exit(1);
 	}
 	
-	char srcIp[sizeof(IPAddr) + 1];
+	char srcIp[sizeof(IPAddr) + 3];
 	cout << "sizeof srcIP: " << sizeof(IPAddr) + 1 << endl;
 	
 	for(unsigned int i = 0; i < sizeof(srcIp); ++i)
@@ -275,7 +301,7 @@ ARP_PKT writeBytesToArpPkt(char* buffer)
 	cout << "src mac: " << arpPkt.srcmac << endl;
 	cout << "buffer now: " << &buffer[currentByte] << endl;
 	
-	char dstIp[sizeof(IPAddr) + 1];
+	char dstIp[sizeof(IPAddr) + 3];
 	for(unsigned int i = 0; i < sizeof(dstIp); ++i)
 		dstIp[i] = 0;
 	
@@ -306,7 +332,7 @@ IP_PKT writeBytesToIpPkt(char *buffer)
 	
 	int currentByte = 0;
 	
-	char dstIp[sizeof(IPAddr) + 1];
+	char dstIp[sizeof(IPAddr) + 3];
 	for(unsigned int i = 0; i < sizeof(dstIp); ++i)
 		dstIp[i] = 0;
 	
@@ -318,7 +344,7 @@ IP_PKT writeBytesToIpPkt(char *buffer)
 	cout << "ipPkt dst after copy: " << ipPkt.dstip << " ntop: " << ntop(ipPkt.dstip) << endl;
 	cout << "buffer now: " << &buffer[currentByte] << endl;
 	
-	char srcIp[sizeof(IPAddr) + 1];
+	char srcIp[sizeof(IPAddr) + 3];
 	for(unsigned int i = 0; i < sizeof(srcIp); ++i)
 		srcIp[i] = 0;
 	
@@ -344,6 +370,8 @@ IP_PKT writeBytesToIpPkt(char *buffer)
 	
 	for(int i = 0; i < IPBUFSIZE; ++i, ++currentByte)
 		ipPkt.data[i] = buffer[currentByte];
+	
+	
 	cout << "ipPkt.buf after copy: " << ipPkt.data << endl;
 	
 	return ipPkt;
