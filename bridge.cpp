@@ -41,10 +41,10 @@ struct MacTableEntry
 	timeval timeStamp;
 };
 
-void displaySelfLearnTable(map<int, MacTableEntry> table)
+void displaySelfLearnTable(map<string, MacTableEntry> table)
 {
 	cout << "SELF LEARN TABLE" << endl;
-	cout << "PORT\tSOCKET\tTIMESTAMP" << endl;
+	cout << "MAC\tSOCKET\tTIMESTAMP" << endl;
 	for(auto &it : table) {
 		cout << it.first << "\t";
 		cout << it.second.socket << "\t";
