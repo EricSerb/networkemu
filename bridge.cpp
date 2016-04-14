@@ -26,7 +26,6 @@
 #include "ip.h"
 #include <cstring>
 #include <map>
-#include "parser.h"
 #include "ether_packet.h"
 #include "ip_mac_interface.h"
 
@@ -163,8 +162,7 @@ int main (int argc, char *argv[])
 	cout << endl;
 
 	//Write the IP addr and port number to files for station to use later
-	string hostName;
-	hostName.assign(argv[1]);
+	string hostName(argv[1]);
 	ofstream hostFile;
 	hostName += ".info";
 	hostFile.open(hostName.c_str(), std::ofstream::out);
@@ -188,7 +186,6 @@ int main (int argc, char *argv[])
 		//Get the current time and then erase entries in the map if they are older than 30 seconds
 		timeval currentTime;
 		gettimeofday(&currentTime, NULL);
-
 		
 		for(auto &it : selfLearnTable) {
 			if((currentTime.tv_sec - it.second.timeStamp.tv_sec) > 30) {
@@ -229,7 +226,18 @@ int main (int argc, char *argv[])
 		}
 		timeval timeout;
 		timeout.tv_sec = 0;
-		if(select(fdmax+1, &read_fds, NULL, NULL, &timeout) == -1) {
+		int ret = 0;
+		ret = select(fdmax+1, &read_fds, NULL, NULL, &timeout);
+		if(ret == -1) {
+			perror("select");
+			if(errno == EBADF)
+				cout << "bad FD passed" << endl;
+			else if(errno == EINVAL)
+				cout << "nfds is wrong" << "fdmax: " << fdmax << " + 1: " << (fdmax + 1) << " timeout tv sec: " << timeout.tv_sec << endl;
+			else if(errno == EINTR)
+				cout << "A signal was caught" << endl;
+			else if(errno == ENOMEM)
+				cout << "No memory available" << endl;
 			cout << "Bridge select() error... CRASH!" << endl;
 			exit(1);
 		}
