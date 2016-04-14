@@ -3,27 +3,11 @@
 #include <cstring>
 #include "parser.h"
 
+// number of bytes in a short.  used when padding values
+// that do not fill all 4 bytes
+#define NUM_BYTES_SHORT 4
+
 using namespace std;
-
-signed short ByteToShort(unsigned char* bytes){
-
-    signed short result = 0;
-    result = (result<<8) + bytes[1]; // heigh byte
-    result = (result<<8) + bytes[0]; // low byte
-    return result;
-}
-
-void ShortToByte(signed short num, unsigned char* bytes){
-
-    bytes[1] = num & 0xFF00; // heigh byte
-    bytes[0] = num & 0x00FF; // low byte
-}
-
-short toShort(const char byte) {
-	signed short result = 0;
-	result = (result<<8) + byte; // low byte
-	return result;
-}
 
 /**
  * Deconstruct an EtherPkt and write it to a byte vector, which is
@@ -47,45 +31,24 @@ cout << __func__ << " " << __LINE__ << "out bytes are: " << &bytes[0] << endl;
 	// Add the type.  We cannot directly add the bytes of a short to the vector,
 	// so cast it to a string first
 	string type = to_string((int)pkt.type);
-	cout << "string type: " << type << " and length " << type.length() << endl;
+	for(unsigned int i = 0; i < (NUM_BYTES_SHORT - type.length()); ++i)
+		bytes.push_back('0');
 	
 	for(unsigned int i = 0; i < type.length(); ++i)
 		bytes.push_back(type[i]);
-	/*unsigned char* typeBytes = new unsigned char[3];
-	cout << "pkt type: " << pkt.type << endl;
-	ShortToByte(pkt.type, typeBytes);
-	short res = ByteToShort(typeBytes);
-	
-	//short res = toShort(b);
-	cout << "the res is: " << res << endl;
-	
-	for(unsigned int i = 0; i < sizeof(typeBytes) - 1; ++i)
-		bytes.push_back(typeBytes[i]);
-	
-	unsigned char* sizeBytes = new unsigned char[3];
-	cout << "pkt size: " << pkt.size << endl;
-	ShortToByte(pkt.size, sizeBytes);
-	short resu = ByteToShort(sizeBytes);
-	
-	//short res = toShort(b);
-	cout << "the resu is: " << resu << endl;
-	
-	for(unsigned int i = 0; i < sizeof(sizeBytes) - 1; ++i)
-		bytes.push_back(sizeBytes[i]);
-	*/
+cout << "string type: " << type << " and length " << type.length() << endl;
 	
 	// Size is also a short and must be read byte by byte.
 cout << __func__ << " " << __LINE__ << "out bytes are: " << &bytes[0] << endl;
 	string size = to_string((int)pkt.size);
 	cout << "size string: " << size << " with length: " << size.length() << endl;
 
-	// TODO: pkt.size represents how full a data buffer is.  This could be
-	// 1 - 4 digits long (max of 1024), so for all size strings less than 4 characters,
-	// maybe we should pad it up to 4 characters (precede the size with 0's).  That way,
-	// we can just extract 4 characters on the receivers end.  This lets us know where the 'size'
-	// field ends and where the data buffer begins
+	for(unsigned int i = 0; i < (NUM_BYTES_SHORT - size.length()); ++i)
+		bytes.push_back('0');
+	
 	for(unsigned int i = 0; i < size.length(); ++i)
 		bytes.push_back(size[i]);
+	
 cout << __func__ << " " << __LINE__ << "out bytes are: " << &bytes[0] << endl;
 	// Add the data (which is any valid string that is terminated by \0)
 	for(unsigned int i = 0; i < sizeof(pkt.data); ++i) {
@@ -126,6 +89,11 @@ std::vector< unsigned char > writeIpPktToBytes(IP_PKT pkt)
 		bytes.push_back(srcIP[i]);
 	
 	string len = to_string((int)pkt.length);
+	for(unsigned int i = 0; i < (NUM_BYTES_SHORT - len.length()); ++i)
+		bytes.push_back('0');
+	
+	cout << __func__ << __LINE__ << "len: " << len << " pkt length: " << pkt.length << endl;
+	
 	for(unsigned int i = 0; i < len.length(); ++i)
 		bytes.push_back(len[i]);
 	
@@ -144,15 +112,6 @@ EtherPkt writeBytesToEtherPacket(char *buffer)
 {
 	EtherPkt etherPkt;
 	
-	/* memcpy(etherPkt.dst, &buffer[0], sizeof(MacAddr));
-	cout << __func__ << " dst: " << etherPkt.dst << endl;
-	memcpy(etherPkt.src, &buffer[18], 18);
-	memcpy(&etherPkt.type, &buffer[36], 2);
-	memcpy(&etherPkt.size, &buffer[38], 2);
-	memcpy(&etherPkt.type, &buffer[36], 2);
-	memcpy(&etherPkt.size, &buffer[38], 2);
-	memcpy(etherPkt.data, &buffer[40], BUFSIZE-ETHPKTHEADER); */
-	
 	int currentByte = 0;
 	cout << __func__ << " copying buffer: " << buffer << endl;
 	cout << "etherPkt.dst before copy: " << etherPkt.dst << endl;
@@ -168,29 +127,31 @@ EtherPkt writeBytesToEtherPacket(char *buffer)
 	
 	cout << "etherPkt.type before copy: " << etherPkt.type << endl;
 	
-	unsigned char type = buffer[currentByte++];
-	if(type == '0')
-		etherPkt.type = 0;
-	else if(type == '1')
-		etherPkt.type = 1;
-	else {
-		cout << __func__ << " " << __LINE__ << " ERROR" << endl;
-		exit(1);
-	}
-	char size[3];
+	char type[NUM_BYTES_SHORT + 1];
+	for(unsigned int i = 0; i < sizeof(type); ++i)
+		type[i] = 0;
+	
+	for(unsigned int i = 0; i < (sizeof(type) - 1); ++i, ++currentByte)
+		type[i] = buffer[currentByte];
+
+	etherPkt.type = atoi(type);
+	cout << __func__ << " " << __LINE__ << " etherPkt type: " << etherPkt.type << " and actual type: " << type << endl;
+	
+	char size[NUM_BYTES_SHORT + 1];
+	for(unsigned int i = 0; i < sizeof(size); ++i)
+		size[i] = 0;
 
 	cout << "etherPkt.type after copy: " << etherPkt.type << endl;
 	
 	cout << "etherPkt.size before copy: " << etherPkt.size << endl;
-	//memcpy(&etherPkt.size, (short*)&buffer[currentByte], 1);
-	for(unsigned int i = 0; i < sizeof(size) - 1; ++i, ++currentByte)
+	for(unsigned int i = 0; i < (sizeof(size) - 1); ++i, ++currentByte)
 		size[i] = buffer[currentByte];
-	size[2] = 0;
+
 	cout << __func__ << " " << __LINE__ << " size: " << size << endl;
 	etherPkt.size = atoi(size);
 
 
-	//cout << "arp packet size: " << sizeof(ARP_PKT) << " etherPkt.size after copy: " << etherPkt.size << endl;
+	cout << "size var: " << size << "etherPkt.size after copy: " << etherPkt.size << endl;
 	
 	cout << "etherPkt.buf before copy: " << etherPkt.data << endl;
 	for(int i = 0; i < ETHBUFSIZE; ++i, ++currentByte)
@@ -214,6 +175,9 @@ std::vector<unsigned char> writeArpPktToBytes(ARP_PKT pkt)
 	// Add the type.  We cannot directly add the bytes of a short to the vector,
 	// so cast it to a string first
 	string op = to_string((int)pkt.op);
+	
+	for(unsigned int i = 0; i < (NUM_BYTES_SHORT - op.length()); ++i)
+		bytes.push_back('0');
 	
 	for(unsigned int i = 0; i < op.length(); ++i)
 		bytes.push_back(op[i]);
@@ -267,15 +231,14 @@ ARP_PKT writeBytesToArpPkt(char* buffer)
 	ARP_PKT arpPkt;
 	int currentByte = 0;
 	
-	unsigned char op = buffer[currentByte++];
-	if(op == '0')
-		arpPkt.op = 0;
-	else if(op == '1')
-		arpPkt.op = 1;
-	else {
-		cout << __func__ << " " << __LINE__ << " ERROR" << endl;
-		exit(1);
-	}
+	char op[NUM_BYTES_SHORT + 1];
+	for(unsigned int i = 0; i < sizeof(op); ++i)
+		op[i] = 0;
+	
+	for(unsigned int i = 0; i < (sizeof(op) - 1); ++i, ++currentByte)
+		op[i] = buffer[currentByte];
+	
+	arpPkt.op = atoi(op);
 	
 	char srcIp[sizeof(IPAddr) + 3];
 	cout << "sizeof srcIP: " << sizeof(IPAddr) + 3 << endl;
@@ -354,11 +317,13 @@ IP_PKT writeBytesToIpPkt(char *buffer)
 	cout << "src ip: " << ipPkt.srcip << " and ntop(): " << ntop(ipPkt.srcip) << endl;
 	cout << "buffer now: " << &buffer[currentByte] << endl;
 	
-	char length[3];
+	char length[NUM_BYTES_SHORT + 1];
+	for(unsigned int i = 0; i < (sizeof(length) - 1); ++i)
+		length[i] = 0;
 	
-	for(unsigned int i = 0; i < sizeof(length) - 1; ++i, ++currentByte)
+	for(unsigned int i = 0; i < (sizeof(length) - 1); ++i, ++currentByte)
 		length[i] = buffer[currentByte];
-	length[2] = 0;
+
 	cout << __func__ << " " << __LINE__ << " length: " << length<< endl;
 	ipPkt.length = atoi(length);
 	
@@ -372,39 +337,6 @@ IP_PKT writeBytesToIpPkt(char *buffer)
 	cout << "ipPkt.buf after copy: " << ipPkt.data << endl;
 	
 	return ipPkt;
-	/*
-	
-	int i = 0, j = 0;
-	
-	//memcpy areas of buffer to form the ip packet that was just sent to us
-	//memcpy(&(pkt.dstip), &(buffer[0]), 4);
-	
-	//memcpy(&(pkt.srcip), &(buffer[4]), 4);
-	
-	//memcpy(&(pkt.length), &(buffer[14]), 2);
-	
-	//memcpy((pkt.data), &(buffer[16]), pkt.length);
-	
-	IP_PKT pkt;
-	char ip[4];
-	for(j = 0; j < 4; i++, j++)
-		ip[j] = buffer[i];
-	pkt.dstip = atoi(ip);
-	
-	for(j = 0; j < 4; i++, j++)
-		ip[j] = buffer[i];
-	pkt.srcip = atoi(ip);
-	
-	char length[2];
-	for(j = 0; j < 2; i++, j++)
-		length[j] = buffer[i];
-	pkt.length = atoi(length);
-	
-	for(int i = 16, j = 0; i < pkt.length; i++, j++)
-		pkt.data[j] = buffer[i];
-	
-	
-	return pkt;*/
 }
 
 
