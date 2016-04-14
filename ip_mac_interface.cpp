@@ -214,6 +214,7 @@ std::vector<unsigned char> writeArpPktToBytes(ARP_PKT pkt)
 	// Add the source mac addr
 	string srcIP = to_string((int)pkt.srcip);
 	
+	cout << "size of srcIP: " << srcIP.length() << endl;
 	for(unsigned int i = 0; i < srcIP.length(); ++i)
 		bytes.push_back(srcIP[i]);
 	
@@ -223,12 +224,13 @@ std::vector<unsigned char> writeArpPktToBytes(ARP_PKT pkt)
 		bytes.push_back(pkt.srcmac[i]);
 	
 	string dstIP = to_string((int)pkt.dstip);
-	
+	cout << "dstIp: " << dstIP << " pkt dst ip: " << pkt.dstip << " ntop: " << ntop(pkt.dstip) << endl;
 	for(unsigned int i = 0; i < dstIP.length(); ++i)
 		bytes.push_back(dstIP[i]);
 	
 	// size - 1 because final byte is null terminator.
 	// This will have to be added in at the other side
+	cout << "dstMac: " << pkt.dstmac << endl;
 	for(unsigned int i = 0; i < sizeof(pkt.dstmac) - 1; ++i)
 		bytes.push_back(pkt.dstmac[i]);
 	
@@ -253,6 +255,8 @@ ARP_PKT writeBytesToArpPkt(char* buffer)
 	}
 	
 	char srcIp[sizeof(IPAddr) + 1];
+	cout << "sizeof srcIP: " << sizeof(IPAddr) + 1 << endl;
+	
 	for(unsigned int i = 0; i < sizeof(srcIp); ++i)
 		srcIp[i] = 0;
 	

@@ -570,6 +570,7 @@ void Station::connectToBridge()
 				m_fd.push_back(fd);
 				//cout << __func__ << __LINE__ << "ip addr: " << ((sockaddr_in*)res->ai_addr)->sin_addr.s_addr << endl;
 				m_fdLookup.insert(pair<string, int>(m_ifaces[i].ifacename, fd));
+				cout << "m_ifaces ip: " << m_ifaces[i].ipaddr << " mask: " << m_ifaces[i].mask << " masked ip: " << ntop((m_ifaces[i].ipaddr & m_ifaces[i].mask)) << endl;
 				connected = true;
 				break;
 				
