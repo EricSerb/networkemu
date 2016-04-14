@@ -75,14 +75,16 @@ void Station::handlePacket(char inputBuffer[BUFSIZE], int incomingFd)
 cout << __func__ << __LINE__ << endl;
 	etherPkt.dump();
 cout << __func__ << __LINE__ << endl;
-
-	// If we have received a packet destined for us, drop it
-	if(strcmp(etherPkt.dst, mac().c_str()) != 0)
-		return;
 	
 	// If we have received an ARP Packet, we need to know if it is a request or a reply
 	if(etherPkt.type == TYPE_ARP_PKT) {
 		ARP_PKT arpPkt = writeBytesToArpPkt(etherPkt.data);
+		
+		// If we have received a packet destined for us that we sent, drop it
+		if(!router() && arpPkt.dstip != ip()) {
+			cout << "arpPkt.dstip != ip" << endl;
+			return;
+		}
 		arpPkt.dump();
 		if(arpPkt.op == ARP_REQUEST) {
 cout << __func__ << __LINE__ << endl;
@@ -100,7 +102,11 @@ cout << __func__ << __LINE__ << endl;
 	}
 	else if(etherPkt.type == TYPE_IP_PKT) {
 		IP_PKT ipPkt = writeBytesToIpPkt(etherPkt.data);
-
+		// If we have received a packet destined for us that we sent, drop it
+		if(!router() && ipPkt.dstip != ip()) {
+			cout << "ipPkt.dstip != ip()" << endl;
+			return;
+		}
 		// If we are not a router, display the data buffer.  
 		// If we are a router, forward the packet
 		if(!router())
@@ -111,14 +117,15 @@ cout << __func__ << __LINE__ << endl;
 				if(m_rTableEntries[i].destsubnet == (m_rTableEntries[i].mask & ipPkt.dstip)) {
 					// Found it!  Get the next hop and send the packet that way
 					SocketBufferEntry pktToSend = createSbEntry(ipPkt.dstip, writeEthernetPacketToBytes(etherPkt));
-
-					m_pendingQueue.push_back(pktToSend);
+					if(pktToSend.fd != incomingFd)
+						m_pendingQueue.push_back(pktToSend);
+					break;
 				}
 				else{
-					cout << "destsubnet: " << m_rTableEntries[i].destsubnet 
-					<< " mask: " << m_rTableEntries[i].mask
-					<< " ipPkt.dst: " << ipPkt.dstip 
-					<< " mask & dstip: " << (m_rTableEntries[i].mask & ipPkt.dstip) << endl;
+					cout << "destsubnet: " << ntop(m_rTableEntries[i].destsubnet)
+					<< " mask: " << ntop(m_rTableEntries[i].mask)
+					<< " ipPkt.dst: " << ntop(ipPkt.dstip)
+					<< " mask & dstip: " << ntop((m_rTableEntries[i].mask & ipPkt.dstip)) << endl;
 				}
 			}
 			
