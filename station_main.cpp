@@ -91,8 +91,7 @@ int main (int argc, char *argv[])
 						cout << "recv error in select() loop" << endl;
 						return 1;
 					}
-					cout << "received packet from bridge (socket " << i << ") with bytesRead: " << bytesRead << " and buf: " << buf << endl;
-					
+
 					station.handlePacket(buf, i);
 				}
 				
@@ -100,7 +99,6 @@ int main (int argc, char *argv[])
 					bytesRead = read(i, buf, sizeof(buf));
 
 					if(bytesRead > 0) {
-						cout << "before calling handleUserInput(), our buf is: " << buf << endl;
 						station.handleUserInput(buf);
 					}
 				}

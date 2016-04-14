@@ -20,25 +20,18 @@ Station::Station(bool routerFlag, string ifaceFile, string rtableFile, string ho
 SocketBufferEntry Station::createSbEntry(IPAddr ip, vector<unsigned char> bytes)
 {
 	SocketBufferEntry sbEntry;
-	cout << "passed ip: " << ip << " ntop: " << ntop(ip) << endl;
-	dumpFdLookup();
 	
 	// Try to find a match between the ip and each mask in the routing table so we know
 	// where to send this packet
 	bool found = false;
 	for(unsigned int i = 0; i < m_rTableEntries.size(); ++i) {
-		cout << "rTableEntries dest: " << ntop(m_rTableEntries[i].destsubnet) << " rTable mask: " << ntop(m_rTableEntries[i].mask)
-		<< " and our masked ip: " << ntop((ip & m_rTableEntries[i].mask))
-		<< " rTable nexthop: " << ntop(m_rTableEntries[i].nexthop) << endl;
-		
 		// If the masked ip matches a destination subnet, then we know where to send the packet next
 		if((ip & m_rTableEntries[i].mask) == m_rTableEntries[i].destsubnet) {
 			string iface(m_rTableEntries[i].ifacename);
-			cout << "Matched interface: " << iface << " and destsubnet: " << ntop(m_rTableEntries[i].destsubnet) <<  endl;
+
 			auto it = m_fdLookup.find(iface);
 			if(it != m_fdLookup.end()) {
 				// We found it!
-				cout << "fdLookup passed; found match in rtable" << endl;
 				found = true;
 				sbEntry.fd = it->second;
 				sbEntry.bytes.assign(bytes.begin(), bytes.end());
@@ -47,9 +40,9 @@ SocketBufferEntry Station::createSbEntry(IPAddr ip, vector<unsigned char> bytes)
 		}	
 	}
 	
-	// TODO: how to handle this case?
+	// TODO: return sbEntry with some fd that lets us know there is no route?
 	if(!found) {
-		cout << "fdLookup failed" << endl;
+		cout << "fdLookup failed.  Exiting." << endl;
 		exit(1);
 	}
 	
@@ -68,13 +61,9 @@ SocketBufferEntry Station::createSbEntry(IPAddr ip, vector<unsigned char> bytes)
  */
 void Station::handlePacket(char inputBuffer[BUFSIZE], int incomingFd)
 {
-	cout << "handlePacket input buffer: " << inputBuffer << endl;
 	// The packet will come to us as an EtherPkt.  Determine if the EtherPkt is wrapping
 	// an IP packet or ARP pkt
 	EtherPkt etherPkt = writeBytesToEtherPacket(inputBuffer);
-cout << __func__ << __LINE__ << endl;
-	etherPkt.dump();
-cout << __func__ << __LINE__ << endl;
 	
 	// If we have received an ARP Packet, we need to know if it is a request or a reply
 	if(etherPkt.type == TYPE_ARP_PKT) {
@@ -82,11 +71,9 @@ cout << __func__ << __LINE__ << endl;
 		
 		// If we have received a packet destined for us that we sent, drop it
 		if(!router() && arpPkt.dstip != ip()) {
-			cout << "arpPkt.dstip != ip" << endl;
 			return;
 		}
-		arpPkt.dump();
-		
+
 		// We need to find the next hop and forward the packet
 		if(router()) {
 			for(unsigned int i = 0; i < m_rTableEntries.size(); ++i) {
@@ -97,12 +84,6 @@ cout << __func__ << __LINE__ << endl;
 						m_pendingQueue.push_back(pktToSend);
 					break;
 				}
-				else{
-					cout << "destsubnet: " << ntop(m_rTableEntries[i].destsubnet)
-					<< " mask: " << ntop(m_rTableEntries[i].mask)
-					<< " arpPkt.dst: " << ntop(arpPkt.dstip)
-					<< " mask & dstip: " << ntop((m_rTableEntries[i].mask & arpPkt.dstip)) << endl;
-				}
 			}
 			return;
 		}
@@ -110,7 +91,6 @@ cout << __func__ << __LINE__ << endl;
 		insertArpCache(arpPkt.srcip, arpPkt.srcmac);
 		
 		if(arpPkt.op == ARP_REQUEST) {
-cout << __func__ << __LINE__ << endl;
 			constructArpReply(arpPkt);
 		}
 		// We've received a reply, which means that we can map the IP and MACs
@@ -126,7 +106,6 @@ cout << __func__ << __LINE__ << endl;
 		IP_PKT ipPkt = writeBytesToIpPkt(etherPkt.data);
 		// If we have received a packet destined for us that we sent, drop it
 		if(!router() && ipPkt.dstip != ip()) {
-			cout << "ipPkt.dstip != ip()" << endl;
 			return;
 		}
 		// If we are not a router, display the data buffer.  
@@ -143,18 +122,11 @@ cout << __func__ << __LINE__ << endl;
 						m_pendingQueue.push_back(pktToSend);
 					break;
 				}
-				else{
-					cout << "destsubnet: " << ntop(m_rTableEntries[i].destsubnet)
-					<< " mask: " << ntop(m_rTableEntries[i].mask)
-					<< " ipPkt.dst: " << ntop(ipPkt.dstip)
-					<< " mask & dstip: " << ntop((m_rTableEntries[i].mask & ipPkt.dstip)) << endl;
-				}
 			}
 			
 		}
 	}
-	
-cout << __func__ << __LINE__ << endl;
+
 }
 
 /**
@@ -162,7 +134,6 @@ cout << __func__ << __LINE__ << endl;
  */
 void Station::handleUserInput(char inputBuffer[BUFSIZE])
 {
-	cout << "user input buffer: " << inputBuffer << endl;
 	string line(inputBuffer);
 	
 	stringstream linestream(line);
@@ -172,16 +143,12 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 	linestream >> command;
 	transform(command.begin(), command.end(), command.begin(), ::tolower);
 	
-	cout << "line: " << line << endl << "command: " << command << endl;
-	
 	if(command == "send") {
 		string dstHost;
 		linestream >> dstHost;
-		cout << "dstHost: " << dstHost << endl;
 		
 		string data;
 		getline(linestream, data);
-		cout << "data: " << data << endl;
 		
 		// First, construct an IP packet.  This will be encapsulated in an EtherPkt,
 		// which will need to handle finding the destination MAC address
@@ -196,9 +163,6 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 		
 		ipPkt.length = sizeof(ipPkt.data);
 		
-		cout << __func__ << " " << __LINE__ << endl;
-		ipPkt.dump();
-		
 		// Now, construct the ethernet packet and lookup the destination mac address
 		EtherPkt etherPkt;
 		
@@ -210,15 +174,14 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 		memcpy(etherPkt.data, &ipBytes[0], ipBytes.size());
 		
 		etherPkt.size = ipBytes.size();
-		
-		cout << __func__ << " " << __LINE__ << endl;
+
 		etherPkt.dump();
 		
 		// Lookup mac address in ARP cache for destination.  If we can't find it, then store the packet in a queue
 		// of packets waiting on ARP replies and send out an ARP request.
 		auto cacheItr = m_arpCache.find(ipPkt.dstip);
 		if(cacheItr == m_arpCache.end()) {
-			cout << "Could not find " << ntop(ipPkt.dstip) << " in the cache" << endl;
+			cout << "Could not find " << ntop(ipPkt.dstip) << " in the cache.  Sending ARP request" << endl;
 			// It wasn't found, send ARP request and add the packet to a wait queue
 			constructArpRequest(ipPkt.dstip);
 
@@ -230,7 +193,6 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 			// as it is being accessed
 			gettimeofday(&(cacheItr->second.timeStamp), NULL);
 			strcpy(etherPkt.dst, cacheItr->second.mac);
-			cout << "eth.dst" << etherPkt.dst << endl;
 
 			SocketBufferEntry sbEntry = createSbEntry(ipPkt.dstip, writeEthernetPacketToBytes(etherPkt));
 			
@@ -242,8 +204,6 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 	{
 		string target;
 		linestream >> target;
-		
-		cout << "target: " << target << endl;
 
 		if(target == "arp") {
 			displayArpCache();
@@ -266,11 +226,12 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 	}
 	else if(command == "quit")
 		exit(0);
-	else //catch for invalid commands
-	{
+	else {
 		cout << "Invalid command: " << inputBuffer << endl;
+		cout << "Valid commands: " << endl;
+		cout << "send <host> <message>" << endl;
+		cout << "show <arp|pq|host|iface|rtable" << endl;
 	}
-	//cout << "Skipped every option include invalid... Major error" << endl;
 }
 
 vector< int > Station::sockets()
@@ -296,12 +257,10 @@ bool Station::isSocket(int fd)
 
 /**
  * Iterate through the pending packet queue and send everything out
- * TODO: pendingQueue should associate a file descriptor with a buffer
  */
 void Station::sendPendingPackets()
 {
 	if(m_pendingQueue.size() <= 0) {
-		//cout << __func__ << __LINE__ << " nothing in PQ" << endl;
 		return;
 	}
 	
@@ -319,7 +278,7 @@ void Station::sendPendingPackets()
 			cout << "buf: " << buf << endl;
 		}
 		else
-			cout << "successfully sent a packet!" << endl;
+			cout << "Successfully sent a packet!" << endl;
 	}
 
 	m_pendingQueue.clear();
@@ -332,8 +291,6 @@ void Station::sendPendingPackets()
  * packets are sent out on the Mac layer, therefore we need to add the bytes of an
  * EtherPkt to our pending packet queue (NOT THE BYTES OF AN ARP PKT).  The arp pkt is wrapped
  * inside of an EtherPkt
- * 
- * TODO: support multiple NICs for m_ifaces ipaddr/macaddr
  */
 void Station::constructArpRequest(IPAddr dstip)
 {
@@ -349,7 +306,6 @@ void Station::constructArpRequest(IPAddr dstip)
 	arpPkt.srcip = ip();
 	arpPkt.dstip = dstip;
 	strcpy(arpPkt.srcmac, mac().c_str());
-	cout << "mac(): " << mac() << endl;
 	
 	strcpy(arpPkt.dstmac, etherPkt.dst);
 	arpPkt.dump();
@@ -368,7 +324,6 @@ void Station::constructArpRequest(IPAddr dstip)
 
 void Station::constructArpReply(ARP_PKT general)
 {
-cout << __func__ << __LINE__ << endl;
 	ARP_PKT arpPkt;
 
 	arpPkt.op = 1;
@@ -378,7 +333,7 @@ cout << __func__ << __LINE__ << endl;
 	strcpy(arpPkt.srcmac, mac().c_str());
 	
 	arpPkt.dstip = general.srcip;
-cout << __func__ << __LINE__ << endl;
+
 	strcpy(arpPkt.dstmac, general.srcmac);
 	arpPkt.dump();
 	
@@ -388,14 +343,14 @@ cout << __func__ << __LINE__ << endl;
 	strcpy(ePkt.src, arpPkt.srcmac);
 	
 	ePkt.type = 0;
-cout << __func__ << __LINE__ << endl;
+
 	vector<unsigned char> arpBytes = writeArpPktToBytes(arpPkt);
 
 	ePkt.size = arpBytes.size();
 	memcpy(&ePkt.data, &arpBytes[0], arpBytes.size());
-cout << __func__ << __LINE__ << endl;
+
 	ePkt.dump();
-cout << __func__ << __LINE__ << endl;
+
 	SocketBufferEntry sbEntry = createSbEntry(arpPkt.dstip, writeEthernetPacketToBytes(ePkt));
 	m_pendingQueue.push_back(sbEntry);
 }
@@ -508,10 +463,13 @@ void Station::connectToBridge()
 		return;
 	
 	for(unsigned int i = 0; i < m_ifaces.size(); ++i) {
-		//TODO:  support more than just one connection (try one per interface)
 		string bridgeName(m_ifaces[i].lanname);
 		
 		string bridgeFile = bridgeName + ".info";
+		
+		// Tried to open a newline from iface file?
+		if(bridgeFile == ".info")
+			continue;
 		
 		ifstream infile(bridgeFile.c_str());
 		
@@ -570,7 +528,7 @@ void Station::connectToBridge()
 				m_fd.push_back(fd);
 				//cout << __func__ << __LINE__ << "ip addr: " << ((sockaddr_in*)res->ai_addr)->sin_addr.s_addr << endl;
 				m_fdLookup.insert(pair<string, int>(m_ifaces[i].ifacename, fd));
-				cout << "m_ifaces ip: " << m_ifaces[i].ipaddr << " mask: " << m_ifaces[i].mask << " masked ip: " << ntop((m_ifaces[i].ipaddr & m_ifaces[i].mask)) << endl;
+
 				connected = true;
 				break;
 				
@@ -592,9 +550,10 @@ void Station::insertArpCache(IPAddr ip, MacAddr mac)
 	CacheEntry entry;
 	gettimeofday(&(entry.timeStamp), NULL);
 	strcpy(entry.mac, mac);
-
+	
+	cout << "Adding " << mac << " to ARP cache." << endl;
+	
 	m_arpCache.insert(pair<IPAddr, CacheEntry>(ip, entry));
-	cout << __func__ << __LINE__ << endl;
 }
 
 CacheEntry Station::lookupArpCache(IPAddr ip)
@@ -602,8 +561,7 @@ CacheEntry Station::lookupArpCache(IPAddr ip)
 	auto it = m_arpCache.find(ip);
 	
 	//if this is true then ip address is not in the table
-	if(it == m_arpCache.end())
-	{
+	if(it == m_arpCache.end()) {
 		CacheEntry empty;
 		strcpy(empty.mac, "");
 		empty.timeStamp.tv_sec = 0;
@@ -614,17 +572,18 @@ CacheEntry Station::lookupArpCache(IPAddr ip)
 	return it->second;
 }
 
+/**
+ * Move a packet that has received an ARP reply from the wait queue to the pending queue,
+ * because now we know where to send the waiting packet to
+ */
 void Station::moveFromArpWaitToPQ(ARP_PKT arpPkt)
 {
-	for(unsigned int i = 0; i < m_arpWaitQueue.size(); i++)
-	{
-		if(strcmp(m_arpWaitQueue[i].src, arpPkt.dstmac) == 0)
-		{
+	for(unsigned int i = 0; i < m_arpWaitQueue.size(); i++) {
+		if(strcmp(m_arpWaitQueue[i].src, arpPkt.dstmac) == 0) {
 			EtherPkt movingPkt = m_arpWaitQueue[i];
 			strcpy(movingPkt.dst, arpPkt.srcmac);
 			SocketBufferEntry sbEntry = createSbEntry(arpPkt.srcip, writeEthernetPacketToBytes(movingPkt));
-			cout << endl << endl << __func__ << " " << "IP that we're sending it to: " << movingPkt.dst << endl << endl;
-			dumpFdLookup();
+
 			m_pendingQueue.push_back(sbEntry);
 			m_arpWaitQueue.erase(m_arpWaitQueue.begin()+i);
 		}
@@ -638,7 +597,7 @@ void Station::arpCacheTimeout()
 	
 	for(auto &it : m_arpCache) {
 			if((currentTime.tv_sec - it.second.timeStamp.tv_sec) > 30) {
-				cout << "Removing " << it.second.mac << " from arpCache" << endl;
+				cout << "Removing " << it.second.mac << " from ARP cache." << endl;
 				m_arpCache.erase(it.first);
 			}
 		}
