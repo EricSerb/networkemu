@@ -26,8 +26,9 @@
 #include "ip.h"
 #include <cstring>
 #include <map>
+#include "parser.h"
 #include "ether_packet.h"
-/*----------------------------------------------------------------*/
+#include "ip_mac_interface.h"
 
 using namespace std;
 
@@ -41,21 +42,22 @@ struct MacTableEntry
 	timeval timeStamp;
 };
 
+void displaySelfLearnTable(map<int, MacTableEntry> table)
+{
+	cout << "SELF LEARN TABLE" << endl;
+	cout << "PORT\tSOCKET\tTIMESTAMP" << endl;
+	for(auto &it : table) {
+		cout << it.first << "\t";
+		cout << it.second.socket << "\t";
+		cout << it.second.timeStamp.tv_sec;
+		cout << endl;
+	}
+}
+
 /* bridge : recvs pkts and relays them */
 /* usage: bridge lan-name max-port */
 int main (int argc, char *argv[])
 {	
-	/* create the symbolic links to its address and port number
-	* so that others (stations/routers) can connect to it
-	*/
-
-	/* listen to the socket.
-	* two cases:
-	* 1. connection open/close request from stations/routers
-	* 2. regular data packets
-	*/
-
-
 	//max fd #, listening socket descriptor, newly accepted fd, # bytes in buff
 	int fdmax, listener, newfd, nbytes;
 
@@ -170,12 +172,6 @@ int main (int argc, char *argv[])
 	hostFile << inet_ntoa(saddr.sin_addr) << " " <<  ntohs(saddr.sin_port);
 
 	hostFile.close();
-	//No longer need to put out name and address as stations will read this from a file
-	/*
-	cout << "Server name = " << temp << endl;
-	cout << "Server address = " << inet_ntoa(saddr.sin_addr) << endl;
-	cout << "Server port number = " << ntohs(saddr.sin_port) << endl;
-	*/
 	
 	// The self learn table.  sin_port of is type unsigned short
 	map<string, MacTableEntry> selfLearnTable;
@@ -289,77 +285,52 @@ int main (int argc, char *argv[])
 						FD_CLR(i, &master);
 
 					}
-					else {	
-						PacketQ pkt;
-					
-						//Cout for testing that we are receiving packets correctly
-						cout << "nbytes: " << nbytes << endl;
-						strcpy(pkt.buf, buf);
-						cout << "buf: " << buf << endl;
-						string buffer;
-						buffer.assign(buf);
-						cout << "buffer: " << buffer << endl;
-						string src;
-						src.assign(buffer, 17, 17);
-						//cout << "src: " << src << endl;
-						//memcpy(&src, &buf[17], 17);
+					else {
+						PacketQ queuedPacket;
+						EtherPkt etherPacket = writeBytesToEtherPacket(buf);
+						etherPacket.dump();
 						
-						cout << src << "==" << buf << endl << endl;
-
-						// Determine which port the packet came in on
-						//struct sockaddr_in peerAddr;
-						//socklen_t peerAddrLen = sizeof peerAddr;
-						//getpeername(i,  (sockaddr*) &peerAddr, &peerAddrLen);
-
-						pkt.socketIn = i;
-						string type;
-						type.clear();
-						//this gets the packet type
-						type.assign(buffer, 36, 2);
-						short packetType = atoi(type.c_str());
-						type.clear();
+						// Save all the relevant information for sending this packet to the next
+						// destination into a packet queue
+						strcpy(queuedPacket.buf, buf);
 						
-						//Now we will get the arp type if packet type is arp
-						if(packetType == TYPE_ARP_PKT) {
-							//Will set arpType to request or reply
-							type.assign(buffer, ETHPKTHEADER, 2);
-							pkt.arpType = atoi(type.c_str());
+						queuedPacket.socketIn = i;
+						// If it is an ARP packet, we want to store the arp type (request/reply) correctly
+						if(etherPacket.type == TYPE_ARP_PKT) {
+							ARP_PKT arpPacket = writeBytesToArpPkt(etherPacket.data);
+							queuedPacket.arpType = arpPacket.op;
 						}
 						else
-							pkt.arpType = -1; //no arp type since it is an ip packet
+							queuedPacket.arpType = -1;
 						
 						
 						//If the MacAddr is not in the self-learn table, then add it
-						if(selfLearnTable.find(src) == selfLearnTable.end()) {
-							cout << "Adding " << src << " to self learn table" << endl;
+						if(selfLearnTable.find(etherPacket.src) == selfLearnTable.end()) {
+							cout << "Adding " << etherPacket.src << " to self learn table" << endl;
 							//Create the MacTableEntry to hold the port and timeStamp
 							MacTableEntry entry;
 							entry.socket = i;
 							gettimeofday(&entry.timeStamp, NULL);
-							selfLearnTable.insert(pair<string, MacTableEntry>(src, entry));
+							selfLearnTable.insert(pair<string, MacTableEntry>(etherPacket.src, entry));
 						}
 						// We know it exists, so update the timestamp
 						else {
-							auto it = selfLearnTable.find(src);
+							auto it = selfLearnTable.find(etherPacket.src);
 							gettimeofday(&it->second.timeStamp, NULL);
 						}
 
-						// Lookup destination mac address in self learn table to see if port is known
-						string dest;
-						dest.assign(buffer, 0, 17);
-						
 						// If the destination is in the self learn  table, make sure the PacketQ known
 						// value gets set to true, so that we do not broadcast it
 						for(auto &it : selfLearnTable) {
-							if(it.first == dest) {
-								cout << dest << " is already in the selfLearnTable.  Updating time stamp" << endl;
-								pkt.known = true;
-								pkt.socketOut = it.second.socket;
+							if(it.first == etherPacket.dst) {
+								cout << etherPacket.dst << " is already in the selfLearnTable.  Updating time stamp" << endl;
+								queuedPacket.known = true;
+								queuedPacket.socketOut = it.second.socket;
 								break;
 							}
 						}
 						
-						recPackets.push_back(pkt);
+						recPackets.push_back(queuedPacket);
 
 					}
 				}

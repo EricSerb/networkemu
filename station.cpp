@@ -55,9 +55,6 @@ SocketBufferEntry Station::createSbEntry(IPAddr ip, vector<unsigned char> bytes)
  * 	display the message (in case we've received an IP packet meant for us)
  * 	generate an ARP reply (in case we've received an ARP request that we can satisfy)
  * 	discard the packet (in case the packet is not for us or we cannot satisfy the ARP request)
- * 
- * TODO: if we're a router, consult the routing table to figure out where the packet should go,
- * 	then set it up to be forwarded properly and add it to the pending queue
  */
 void Station::handlePacket(char inputBuffer[BUFSIZE], int incomingFd)
 {
@@ -174,8 +171,6 @@ void Station::handleUserInput(char inputBuffer[BUFSIZE])
 		memcpy(etherPkt.data, &ipBytes[0], ipBytes.size());
 		
 		etherPkt.size = ipBytes.size();
-
-		etherPkt.dump();
 		
 		// Lookup mac address in ARP cache for destination.  If we can't find it, then store the packet in a queue
 		// of packets waiting on ARP replies and send out an ARP request.
@@ -264,8 +259,6 @@ void Station::sendPendingPackets()
 		return;
 	}
 	
-	displayPQ();
-	
 	for(unsigned int i = 0; i < m_pendingQueue.size(); ++i) {
 		char buf[BUFSIZE];
 		for(unsigned int i = 0; i < sizeof(buf); ++i)
@@ -308,7 +301,6 @@ void Station::constructArpRequest(IPAddr dstip)
 	strcpy(arpPkt.srcmac, mac().c_str());
 	
 	strcpy(arpPkt.dstmac, etherPkt.dst);
-	arpPkt.dump();
 
 	// The ARP packet will be contained in the EtherPkt's data buffer
 	vector<unsigned char> arpBytes = writeArpPktToBytes(arpPkt);
@@ -335,7 +327,6 @@ void Station::constructArpReply(ARP_PKT general)
 	arpPkt.dstip = general.srcip;
 
 	strcpy(arpPkt.dstmac, general.srcmac);
-	arpPkt.dump();
 	
 	EtherPkt ePkt;
 
@@ -348,8 +339,6 @@ void Station::constructArpReply(ARP_PKT general)
 
 	ePkt.size = arpBytes.size();
 	memcpy(&ePkt.data, &arpBytes[0], arpBytes.size());
-
-	ePkt.dump();
 
 	SocketBufferEntry sbEntry = createSbEntry(arpPkt.dstip, writeEthernetPacketToBytes(ePkt));
 	m_pendingQueue.push_back(sbEntry);
