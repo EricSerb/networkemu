@@ -86,13 +86,35 @@ cout << __func__ << __LINE__ << endl;
 			return;
 		}
 		arpPkt.dump();
+		
+		// We need to find the next hop and forward the packet
+		if(router()) {
+			for(unsigned int i = 0; i < m_rTableEntries.size(); ++i) {
+				if(m_rTableEntries[i].destsubnet == (m_rTableEntries[i].mask & arpPkt.dstip)) {
+					// Found it!  Get the next hop and send the packet that way
+					SocketBufferEntry pktToSend = createSbEntry(arpPkt.dstip, writeEthernetPacketToBytes(etherPkt));
+					if(pktToSend.fd != incomingFd)
+						m_pendingQueue.push_back(pktToSend);
+					break;
+				}
+				else{
+					cout << "destsubnet: " << ntop(m_rTableEntries[i].destsubnet)
+					<< " mask: " << ntop(m_rTableEntries[i].mask)
+					<< " arpPkt.dst: " << ntop(arpPkt.dstip)
+					<< " mask & dstip: " << ntop((m_rTableEntries[i].mask & arpPkt.dstip)) << endl;
+				}
+			}
+			return;
+		}
+		
+		insertArpCache(arpPkt.srcip, arpPkt.srcmac);
+		
 		if(arpPkt.op == ARP_REQUEST) {
 cout << __func__ << __LINE__ << endl;
 			constructArpReply(arpPkt);
 		}
 		// We've received a reply, which means that we can map the IP and MACs
 		else if(arpPkt.op == ARP_REPLY) {
-			insertArpCache(arpPkt.srcip, arpPkt.srcmac);
 			moveFromArpWaitToPQ(arpPkt);
 		}
 		else {
