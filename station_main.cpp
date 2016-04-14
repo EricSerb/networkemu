@@ -71,8 +71,7 @@ int main (int argc, char *argv[])
 	
 	while(true) {
 		fd_set readSet = masterSet;
-		timeval timeout;
-		timeout.tv_sec = 0;
+		timeval timeout = {0, 0};
 		select(maxFd+1, &readSet, NULL, NULL, &timeout);
 
 		station.sendPendingPackets();

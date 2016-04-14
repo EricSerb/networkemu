@@ -207,8 +207,6 @@ int main (int argc, char *argv[])
 				for(int i = 0; i <= fdmax; i++) {
 					//send to everyone except the listener and server and port sent in on
 					if(FD_ISSET(i, &master) && i != listener && i != toSend.socketIn) {
-							cout << "i: " << i << endl;
-							//cout << buf << " i = " << j << endl;
 							if(send(i, &toSend.buf[0], sizeof(toSend.buf), 0) == -1) {
 								cout << "Bridge send() error..." << endl;
 							}
@@ -224,7 +222,7 @@ int main (int argc, char *argv[])
 				cout << "Sent to " << toSend.socketOut << endl;
 			}
 		}
-		timeval timeout;
+		timeval timeout = { 1, 1 };
 		timeout.tv_sec = 0;
 		int ret = 0;
 		ret = select(fdmax+1, &read_fds, NULL, NULL, &timeout);
@@ -296,7 +294,6 @@ int main (int argc, char *argv[])
 					else {
 						PacketQ queuedPacket;
 						EtherPkt etherPacket = writeBytesToEtherPacket(buf);
-						etherPacket.dump();
 						
 						// Save all the relevant information for sending this packet to the next
 						// destination into a packet queue
