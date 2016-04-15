@@ -281,11 +281,14 @@ int main (int argc, char *argv[])
 				}
 
 				else if(i == fileno(stdin)){
+					for(unsigned int i = 0; i < sizeof(buf); ++i)
+						buf[i] = 0;
 					int bytesRead = read(i, buf, sizeof(buf));
 					if(bytesRead > 0){
 						for(int i = 0; i < bytesRead; ++i)
 							buf[i] = tolower(buf[i]);
-						displaySelfLearnTable(selfLearnTable);
+						if(strcmp(buf, "show sl") == 0)
+							displaySelfLearnTable(selfLearnTable);
 					}
 				}
 				else {
