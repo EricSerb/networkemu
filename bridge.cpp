@@ -28,6 +28,7 @@
 #include <map>
 #include "ether_packet.h"
 #include "ip_mac_interface.h"
+#include <sstream>
 
 using namespace std;
 
@@ -281,14 +282,32 @@ int main (int argc, char *argv[])
 				}
 
 				else if(i == fileno(stdin)){
-					for(unsigned int i = 0; i < sizeof(buf); ++i)
-						buf[i] = 0;
 					int bytesRead = read(i, buf, sizeof(buf));
+					
+					
 					if(bytesRead > 0){
 						for(int i = 0; i < bytesRead; ++i)
 							buf[i] = tolower(buf[i]);
-						if(strcmp(buf, "show sl") == 0)
-							displaySelfLearnTable(selfLearnTable);
+						
+						string userInput(buf);
+						stringstream linestream(userInput);
+						string command;
+						linestream >> command;
+						
+						if(command == "show") {
+							string target;
+							linestream >> target;
+							if(target == "sl")
+								displaySelfLearnTable(selfLearnTable);
+							else
+								cout << "Invalid show command" << endl;
+						}
+						else if(command == "quit") {
+							return 0;
+						}
+						else
+							cout << "Invalid command." << endl;
+				
 					}
 				}
 				else {
