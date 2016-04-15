@@ -175,6 +175,10 @@ int main (int argc, char *argv[])
 	map<string, MacTableEntry> selfLearnTable;
 	
 	recPackets.clear();
+	
+	FD_SET(fileno(stdin), &master);
+	if(fileno(stdin) > fdmax)
+		fdmax = fileno(stdin);
 
 	for(;;) {
 		char buf[BUFSIZE];
@@ -273,6 +277,15 @@ int main (int argc, char *argv[])
 							cout << "Bridge address = " << inet_ntoa(saddr.sin_addr) << endl;
 							cout << "Bridge port number = " << ntohs(saddr.sin_port) << endl;
 						}
+					}
+				}
+
+				else if(i == fileno(stdin)){
+					int bytesRead = read(i, buf, sizeof(buf));
+					if(bytesRead > 0){
+						for(int i = 0; i < bytesRead; ++i)
+							buf[i] = tolower(buf[i]);
+						displaySelfLearnTable(selfLearnTable);
 					}
 				}
 				else {
