@@ -223,8 +223,8 @@ int main (int argc, char *argv[])
 				if(send(toSend.socketOut, &toSend.buf[0], sizeof(toSend.buf), 0) == -1) {
 					cout << "Bridge send() error..." << endl;
 				}
-				
-				cout << "Sent to " << toSend.socketOut << endl;
+				else
+					cout << "Sent to " << toSend.socketOut << endl;
 			}
 		}
 		timeval timeout = { 1, 1 };
