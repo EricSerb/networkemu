@@ -211,7 +211,7 @@ int main (int argc, char *argv[])
 				//This is the code for sending out to all ports except the one received on
 				for(int i = 0; i <= fdmax; i++) {
 					//send to everyone except the listener and server and port sent in on
-					if(FD_ISSET(i, &master) && i != listener && i != toSend.socketIn) {
+					if(FD_ISSET(i, &master) && i != listener && i != toSend.socketIn && i != STDIN_FILENO) {
 							if(send(i, &toSend.buf[0], sizeof(toSend.buf), 0) == -1) {
 								cout << "Bridge send() error..." << endl;
 							}
