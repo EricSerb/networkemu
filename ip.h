@@ -41,12 +41,6 @@ typedef struct iface {
 	char lanname[32];
 } Iface;
 
-/* mapping between interface name and socket id representing link */
-typedef struct itface2link {
-	char ifacename[32];
-	int sockfd;
-} ITF2LINK;
-
 /* Structure for a routing table entry */
 
 typedef struct rtable {
@@ -56,38 +50,6 @@ typedef struct rtable {
 	char ifacename[32];
 } Rtable;
 
-
-/* Structure for an ARP cache entry */
-
-typedef struct arpcache {
-	IPAddr ipaddr;
-	MacAddr macaddr;
-} Arpc;
-
-/*--------------------------------------------------------------------*/
-
-/* The Structure of the IP datagram and ARP packets go here */
-
-/*--------------------------------------------------------------------*/
-
-/*--------------------------------------------------------------------*/
-/* Structure for ARP packets */
-
-/*list of arp cache, to use this one to maintain current cache*/
-
-typedef struct arp_list {
-	Arpc *arp_item;
-	struct arp_list *next;
-} ARP_LIST;
-
-/*queue for ip packet that has not yet sent out
-typedef struct p_queue
-{
-	IPAddr next_hop_ipaddr;
-	IPAddr dst_ipaddr;
-	char *pending_pkt;
-	struct p_queue *next;
-} PENDING_QUEUE;*/
 
 /*queue to hold packets and tell where they need to go next
  * @buf will hold the bytes received
@@ -106,20 +68,10 @@ typedef struct packet_queue
 	bool known = false;
 } PacketQ;
 
-/*-------------------------------------------------------------------- */
-
-#define MAXHOSTS 32
-#define MAXINTER 32
-
 typedef struct host
 {
 	std::string name;
 	IPAddr addr;
 } Host;
-
-typedef struct lan_rout {
-	short router_attached;
-	short counter;
-} LAN_ROUT;
 
 #endif
